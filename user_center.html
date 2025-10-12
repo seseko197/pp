@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抑郁症分析系统 - 用户中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#6366f1',
+                        accent: '#8b5cf6',
+                        dark: '#1e293b',
+                        light: '#f8fafc',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        info: '#06b6d4',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style>
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .hover-scale {
+            transition: transform 0.2s;
+        }
+        .hover-scale:hover {
+            transform: scale(1.03);
+        }
+        .progress-bar-bg {
+            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
+        }
+        .table-row-hover:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-heartbeat text-primary text-2xl"></i>
+                <span class="text-xl font-bold text-dark">抑郁症分析系统</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="index.html" class="text-gray-600 hover:text-primary transition-colors">首页</a>
+                <a href="analysis.html" class="text-primary font-medium">分析中心</a>
+                <div class="flex items-center space-x-2">
+                    <!-- 导航栏头像 - 需要同步更新 -->
+                    <img id="nav-avatar-desktop" src="https://picsum.photos/id/91/40/40" alt="用户头像" class="w-10 h-10 rounded-full object-cover border-2 border-primary">
+                    <span class="text-gray-700 font-medium">周光泽</span>
+                </div>
+                <a href="login.html" class="text-gray-600 hover:text-danger transition-colors">
+                    <i class="fa fa-sign-out"></i> 退出
+                </a>
+            </div>
+            <div class="md:hidden">
+                <button id="menu-toggle" class="text-gray-600 hover:text-primary focus:outline-none">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-white px-4 py-2 shadow-lg">
+            <a href="index.html" class="block py-2 text-gray-600 hover:text-primary">首页</a>
+            <a href="analysis.html" class="block py-2 text-primary font-medium">分析中心</a>
+            <div class="py-2 flex items-center space-x-2 border-t border-gray-100">
+                <!-- 移动端导航栏头像 - 需要同步更新 -->
+                <img id="nav-avatar-mobile" src="https://picsum.photos/id/91/40/40" alt="用户头像" class="w-8 h-8 rounded-full object-cover border-2 border-primary">
+                <span class="text-gray-700 font-medium">周光泽</span>
+            </div>
+            <a href="login.html" class="block py-2 text-danger font-medium border-t border-gray-100">
+                <i class="fa fa-sign-out mr-2"></i> 退出
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="container mx-auto px-4 pt-24 pb-16">
+        <!-- 页面标题 -->
+        <div class="mb-8">
+            <h1 class="text-2xl md:text-3xl font-bold text-dark mb-2">用户中心</h1>
+            <p class="text-gray-500">管理您的个人信息和分析历史</p>
+        </div>
+        
+        <!-- 用户信息概览 -->
+        <div class="bg-white rounded-xl card-shadow p-6 mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <div class="relative">
+                        <!-- 用户信息概览头像 -->
+                    <img id="user-avatar" src="https://picsum.photos/id/91/100/100" alt="用户头像" class="w-20 h-20 rounded-full object-cover border-4 border-primary mr-6">
+                        <button id="change-avatar-btn" class="absolute bottom-0 right-6 bg-white rounded-full p-1 border border-gray-300 shadow-sm hover:shadow-md transition-shadow">
+                            <i class="fa fa-camera text-gray-600"></i>
+                        </button>
+                        <input type="file" id="avatar-input" accept="image/*" class="hidden">
+                    </div>
+                    <div>
+                        <h2 id="user-name" class="text-xl font-bold text-dark">周光泽</h2>
+                        <p id="user-email" class="text-gray-500 mb-1">2036453418@qq.com</p>
+                        <p class="text-gray-500 mb-2">注册时间：2023-06-15</p>
+                        <div class="flex space-x-2">
+                            <span class="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">心理健康等级：良好</span>
+                            <span class="bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">连续分析 12 天</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button id="edit-profile-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md transition-colors flex items-center shadow-sm hover:shadow">
+                        <i class="fa fa-pencil mr-2"></i> 编辑资料
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 个人资料编辑模态框 -->
+        <div id="edit-profile-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+            <div class="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-dark">编辑个人资料</h3>
+                    <button id="close-modal-btn" class="text-gray-500 hover:text-gray-700">
+                        <i class="fa fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="profile-form">
+                        <!-- 头像上传 -->
+                        <div class="flex flex-col items-center mb-6">
+                            <div class="relative mb-2">
+                                <!-- 编辑资料模态框中的头像预览 -->
+                                <img id="preview-avatar" src="https://picsum.photos/id/91/100/100" alt="用户头像" class="w-24 h-24 rounded-full object-cover border-4 border-primary">
+                                <button type="button" id="upload-avatar-btn" class="absolute bottom-0 right-0 bg-white rounded-full p-2 border border-gray-300 shadow-sm hover:shadow-md transition-shadow">
+                                    <i class="fa fa-camera text-primary"></i>
+                                </button>
+                                <input type="file" id="form-avatar-input" accept="image/*" class="hidden">
+                            </div>
+                            <p class="text-sm text-gray-500">点击更换头像</p>
+                        </div>
+
+                        <!-- 基本信息表单 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="fullname" class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                                <input type="text" id="fullname" name="fullname" value="周光泽" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                            </div>
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                                <input type="email" id="email" name="email" value="2036453418@qq.com" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                            </div>
+                            <div>
+                                <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">性别</label>
+                                <select id="gender" name="gender" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                                    <option value="male">男</option>
+                                    <option value="female">女</option>
+                                    <option value="other">其他</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="age" class="block text-sm font-medium text-gray-700 mb-1">年龄</label>
+                                <input type="number" id="age" name="age" value="28" min="1" max="120" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="occupation" class="block text-sm font-medium text-gray-700 mb-1">职业</label>
+                                <input type="text" id="occupation" name="occupation" value="软件工程师" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="bio" class="block text-sm font-medium text-gray-700 mb-1">个人简介</label>
+                                <textarea id="bio" name="bio" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">关注心理健康，热爱生活和技术。</textarea>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="interests" class="block text-sm font-medium text-gray-700 mb-1">兴趣爱好</label>
+                                <input type="text" id="interests" name="interests" value="阅读, 运动, 编程, 音乐" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                                <p class="text-xs text-gray-500 mt-1">请用逗号分隔多个兴趣爱好</p>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">心理健康关注点</label>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                    <label class="flex items-center space-x-2 p-2 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" name="concerns" value="anxiety" checked class="rounded text-primary focus:ring-primary">
+                                        <span>焦虑管理</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-2 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" name="concerns" value="sleep" checked class="rounded text-primary focus:ring-primary">
+                                        <span>睡眠改善</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-2 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" name="concerns" value="stress" class="rounded text-primary focus:ring-primary">
+                                        <span>压力缓解</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-2 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" name="concerns" value="mood" class="rounded text-primary focus:ring-primary">
+                                        <span>情绪调节</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-2 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" name="concerns" value="depression" checked class="rounded text-primary focus:ring-primary">
+                                        <span>抑郁预防</span>
+                                    </label>
+                                    <label class="flex items-center space-x-2 p-2 border border-gray-200 rounded-md hover:bg-gray-50 cursor-pointer transition-colors">
+                                        <input type="checkbox" name="concerns" value="relationships" class="rounded text-primary focus:ring-primary">
+                                        <span>人际关系</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+                    <button id="cancel-edit-btn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition-colors">
+                        取消
+                    </button>
+                    <button id="save-profile-btn" class="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-md transition-colors shadow-sm hover:shadow">
+                        保存更改
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 数据统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- 总分析次数 -->
+            <div class="bg-white rounded-xl card-shadow p-6 hover-scale">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700">总分析次数</h3>
+                    <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                        <i class="fa fa-bar-chart text-primary"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-dark">42</div>
+                <div class="text-sm text-green-500 flex items-center mt-2">
+                    <i class="fa fa-arrow-up mr-1"></i>
+                    <span>较上月增长 12%</span>
+                </div>
+            </div>
+            
+            <!-- 平均得分 -->
+            <div class="bg-white rounded-xl card-shadow p-6 hover-scale">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700">平均健康得分</h3>
+                    <div class="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center">
+                        <i class="fa fa-heartbeat text-secondary"></i>
+                    </div>
+                </div>
+                <div class="text-3xl font-bold text-dark">82</div>
+                <div class="text-sm text-green-500 flex items-center mt-2">
+                    <i class="fa fa-arrow-up mr-1"></i>
+                    <span>较上月增长 5%</span>
+                </div>
+            </div>
+            
+            <!-- 最近一次分析 -->
+            <div class="bg-white rounded-xl card-shadow p-6 hover-scale">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-700">最近分析</h3>
+                    <div class="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center">
+                        <i class="fa fa-clock-o text-accent"></i>
+                    </div>
+                </div>
+                <div class="text-lg font-bold text-dark">2023-07-28</div>
+                <div class="text-sm text-gray-500 mt-2">
+                    <span>得分：85分</span>
+                    <span class="mx-2">·</span>
+                    <span class="text-success">良好</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 情绪趋势图表和健康指标 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <!-- 情绪趋势图表 -->
+            <div class="bg-white rounded-xl card-shadow p-6 lg:col-span-2">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-dark mb-4 md:mb-0">情绪趋势</h3>
+                    <div class="flex space-x-2">
+                        <button class="bg-primary text-white px-3 py-1 rounded text-sm">周</button>
+                        <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm transition-colors">月</button>
+                        <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm transition-colors">年</button>
+                    </div>
+                </div>
+                <div class="h-72">
+                    <canvas id="moodTrendChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 健康指标 -->
+            <div class="bg-white rounded-xl card-shadow p-6">
+                <h3 class="text-lg font-semibold text-dark mb-6">健康指标概览</h3>
+                
+                <!-- 心理健康指数 -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-600">心理健康指数</span>
+                        <span class="font-medium text-primary">82</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full progress-bar-bg rounded-full" style="width: 82%"></div>
+                    </div>
+                </div>
+                
+                <!-- 睡眠质量 -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-600">睡眠质量</span>
+                        <span class="font-medium text-success">78</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-success rounded-full" style="width: 78%"></div>
+                    </div>
+                </div>
+                
+                <!-- 压力水平 -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-600">压力水平</span>
+                        <span class="font-medium text-warning">65</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-warning rounded-full" style="width: 65%"></div>
+                    </div>
+                </div>
+                
+                <!-- 活动量 -->
+                <div class="mb-6">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-gray-600">活动量</span>
+                        <span class="font-medium text-info">90</span>
+                    </div>
+                    <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div class="h-full bg-info rounded-full" style="width: 90%"></div>
+                    </div>
+                </div>
+                
+                <!-- 建议按钮 -->
+                <button class="w-full bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center">
+                    <i class="fa fa-lightbulb-o mr-2"></i> 获取健康建议
+                </button>
+            </div>
+        </div>
+        
+        <!-- 历史记录管理 -->
+        <div class="bg-white rounded-xl card-shadow p-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-dark mb-4 md:mb-0">历史记录</h3>
+                    <div class="flex flex-wrap gap-4">
+                        <div class="relative">
+                            <input type="text" placeholder="搜索记录..."
+                                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
+                            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                        <button id="batch-delete-btn" class="bg-danger hover:bg-danger/90 text-white px-4 py-2 rounded-md transition-colors flex items-center hidden">
+                            <i class="fa fa-trash mr-2"></i> 批量删除
+                        </button>
+                    </div>
+                </div>
+            
+
+            
+            <!-- 历史记录表格 -->
+            <div class="overflow-x-auto">
+                <table id="history-table" class="min-w-full divide-y divide-gray-200">
+                    <thead>
+                        <tr>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" id="select-all" class="rounded text-primary focus:ring-primary">
+                                    <span class="ml-2">全选</span>
+                                </label>
+                            </th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分析日期</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分析模型</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">得分</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                            <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <!-- 历史记录项 1 -->
+                        <tr class="table-row-hover transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="1">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2023-07-28</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">SVM模型</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">85</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">良好</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                            </td>
+                        </tr>
+                        <!-- 历史记录项 2 -->
+                        <tr class="table-row-hover transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="2">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2023-07-27</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">随机森林</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">82</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">良好</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                            </td>
+                        </tr>
+                        <!-- 历史记录项 3 -->
+                        <tr class="table-row-hover transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="3">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2023-07-26</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">SVM模型</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">78</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">一般</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                            </td>
+                        </tr>
+                        <!-- 历史记录项 4 -->
+                        <tr class="table-row-hover transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="4">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2023-07-25</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">随机森林</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">75</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">一般</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                            </td>
+                        </tr>
+                        <!-- 历史记录项 5 -->
+                        <tr class="table-row-hover transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="5">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2023-07-24</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">SVM模型</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">80</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">良好</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                            </td>
+                        </tr>
+                        <!-- 历史记录项 6 -->
+                        <tr class="table-row-hover transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="6">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2023-07-23</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">随机森林</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">79</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">一般</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                            </td>
+                        </tr>
+                        <!-- 历史记录项 7 -->
+                        <tr class="table-row-hover transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="7">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2023-07-22</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">SVM模型</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">83</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">良好</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                            </td>
+                        </tr>
+                        <!-- 历史记录项 8 -->
+                        <tr class="table-row-hover transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="8">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2023-07-21</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">随机森林</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">86</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">良好</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                            </td>
+                        </tr>
+                        <!-- 历史记录项 9 -->
+                        <tr class="table-row-hover transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="9">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2023-07-20</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">SVM模型</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">81</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">良好</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                            </td>
+                        </tr>
+                        <!-- 历史记录项 10 -->
+                        <tr class="table-row-hover transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="10">
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">2023-07-19</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">随机森林</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">77</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">一般</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 分页 -->
+            <div class="flex items-center justify-between px-4 py-3 mt-6 border-t border-gray-200 sm:px-6">
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm text-gray-700">
+                                <span id="display-mode-text">显示第 <span class="font-medium" id="showing-start">1</span> 到 <span class="font-medium" id="showing-end">4</span> 条，共 <span class="font-medium" id="total-records">10</span> 条结果</span>
+                            </p>
+                            <div class="ml-4">
+                                <button id="show-all-btn" class="text-sm text-primary hover:text-primary/80">显示全部</button>
+                                <button id="show-paged-btn" class="text-sm text-gray-500 hover:text-gray-700 hidden ml-2">分页显示</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <nav id="pagination-container" class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <button class="pagination-prev relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">上一页</span>
+                                    <i class="fa fa-chevron-left text-xs"></i>
+                                </button>
+                                <button class="pagination-page relative inline-flex items-center px-4 py-2 border text-sm font-medium" data-page="1">1</button>
+                                <button class="pagination-page relative inline-flex items-center px-4 py-2 border text-sm font-medium" data-page="2">2</button>
+                                <button class="pagination-page relative inline-flex items-center px-4 py-2 border text-sm font-medium" data-page="3">3</button>
+                                <span class="pagination-ellipsis relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>
+                                <button class="pagination-page relative inline-flex items-center px-4 py-2 border text-sm font-medium" data-page="9">9</button>
+                                <button class="pagination-next relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <span class="sr-only">下一页</span>
+                                    <i class="fa fa-chevron-right text-xs"></i>
+                                </button>
+                            </nav>
+                    </div>
+                </div>
+                <div class="flex justify-center sm:hidden">
+                    <button id="mobile-load-more" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        查看更多
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-gray-300 py-8">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-4"><i class="fa fa-heartbeat text-primary mr-2"></i>抑郁症分析系统 - 关注心理健康，科学预防抑郁症</p>
+            <div class="flex justify-center space-x-6 mb-4">
+                <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fa fa-weixin text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fa fa-weibo text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                    <i class="fa fa-qq text-xl"></i>
+                </a>
+            </div>
+            <p class="text-sm text-gray-500">&copy; 2023 抑郁症分析系统. 保留所有权利.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 移动端菜单切换
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // 情绪趋势图表
+        const ctx = document.getElementById('moodTrendChart').getContext('2d');
+        const moodTrendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                datasets: [
+                    {
+                        label: '情绪指数',
+                        data: [75, 78, 82, 76, 79, 85, 82],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#3b82f6',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    },
+                    {
+                        label: '压力指数',
+                        data: [65, 62, 58, 70, 68, 60, 55],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#ef4444',
+                        pointBorderWidth: 2,
+                        pointRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#1e293b',
+                        bodyColor: '#334155',
+                        borderColor: '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 12,
+                        boxPadding: 6
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        min: 40,
+                        max: 100,
+                        ticks: {
+                            stepSize: 20
+                        },
+                        grid: {
+                            color: 'rgba(226, 232, 240, 0.5)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(226, 232, 240, 0.5)'
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+        
+        // 表格行悬停效果
+        const tableRows = document.querySelectorAll('tbody tr');
+        tableRows.forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                row.classList.add('table-row-hover');
+            });
+            
+            row.addEventListener('mouseleave', () => {
+                row.classList.remove('table-row-hover');
+            });
+        });
+        
+        // 查看详情按钮点击事件
+        const viewButtons = document.querySelectorAll('a[href="#"]');
+        viewButtons.forEach(button => {
+            if (button.textContent.includes('查看详情')) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    alert('查看分析详情');
+                });
+            }
+        });
+        
+        // 编辑个人资料功能
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+        const editProfileModal = document.getElementById('edit-profile-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const saveProfileBtn = document.getElementById('save-profile-btn');
+        const profileForm = document.getElementById('profile-form');
+        const userAvatar = document.getElementById('user-avatar');
+        const previewAvatar = document.getElementById('preview-avatar');
+        const changeAvatarBtn = document.getElementById('change-avatar-btn');
+        const avatarInput = document.getElementById('avatar-input');
+        const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
+        const formAvatarInput = document.getElementById('form-avatar-input');
+        const userName = document.getElementById('user-name');
+        const userEmail = document.getElementById('user-email');
+        
+        // 导航栏头像元素
+        const navAvatarDesktop = document.getElementById('nav-avatar-desktop');
+        const navAvatarMobile = document.getElementById('nav-avatar-mobile');
+        
+        // 打开编辑模态框
+        editProfileBtn.addEventListener('click', () => {
+            editProfileModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // 防止背景滚动
+        });
+        
+        // 关闭编辑模态框的函数
+        function closeModal() {
+            editProfileModal.classList.add('hidden');
+            document.body.style.overflow = 'auto'; // 恢复背景滚动
+        }
+        
+        // 关闭模态框事件
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelEditBtn.addEventListener('click', closeModal);
+        
+        // 点击模态框外部关闭
+        editProfileModal.addEventListener('click', (e) => {
+            if (e.target === editProfileModal) {
+                closeModal();
+            }
+        });
+        
+        // 头像上传处理函数 - 更新所有头像
+        function handleAvatarUpload(input, previewImg) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    
+                    // 同步更新所有头像
+                    userAvatar.src = e.target.result;
+                    previewAvatar.src = e.target.result;
+                    navAvatarDesktop.src = e.target.result;
+                    navAvatarMobile.src = e.target.result;
+                }
+                
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        // 头像上传点击事件
+        changeAvatarBtn.addEventListener('click', () => {
+            avatarInput.click();
+        });
+        
+        uploadAvatarBtn.addEventListener('click', () => {
+            formAvatarInput.click();
+        });
+        
+        // 头像文件改变事件
+        avatarInput.addEventListener('change', function() {
+            handleAvatarUpload(this, userAvatar);
+        });
+        
+        formAvatarInput.addEventListener('change', function() {
+            handleAvatarUpload(this, previewAvatar);
+        });
+        
+        // 保存个人资料
+        saveProfileBtn.addEventListener('click', () => {
+            // 获取表单数据
+            const fullname = document.getElementById('fullname').value;
+            const email = document.getElementById('email').value;
+            const gender = document.getElementById('gender').value;
+            const age = document.getElementById('age').value;
+            const occupation = document.getElementById('occupation').value;
+            const bio = document.getElementById('bio').value;
+            const interests = document.getElementById('interests').value;
+            const concerns = Array.from(document.querySelectorAll('input[name="concerns"]:checked')).map(cb => cb.value);
+            
+            // 简单表单验证
+            if (!fullname.trim()) {
+                alert('请输入姓名');
+                return;
+            }
+            
+            if (!email.trim()) {
+                alert('请输入邮箱');
+                return;
+            }
+            
+            // 更新页面显示的用户信息
+            userName.textContent = fullname;
+            userEmail.textContent = email;
+            
+            // 模拟保存到服务器的过程
+            // 在实际应用中，这里应该发送AJAX请求到服务器保存数据
+            setTimeout(() => {
+                // 显示保存成功的动画效果
+                const saveSuccess = document.createElement('div');
+                saveSuccess.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0 opacity-100';
+                saveSuccess.innerHTML = '<i class="fa fa-check-circle mr-2"></i>个人资料保存成功！';
+                document.body.appendChild(saveSuccess);
+                
+                // 3秒后移除成功提示
+                setTimeout(() => {
+                    saveSuccess.classList.add('translate-y-10', 'opacity-0');
+                    setTimeout(() => {
+                        document.body.removeChild(saveSuccess);
+                    }, 300);
+                }, 3000);
+                
+                // 关闭模态框
+                closeModal();
+            }, 800);
+        });
+        
+        // 删除按钮点击事件
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('确定要删除这条记录吗？')) {
+                    const row = this.closest('tr');
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                        row.remove();
+                        
+                        // 重新计算并更新分页信息
+                        const remainingRecords = document.querySelectorAll('table tbody tr').length;
+                        const totalPages = Math.ceil(remainingRecords / recordsPerPage);
+                        
+                        // 如果当前页没有记录了，回退到上一页
+                        if (remainingRecords > 0 && document.querySelectorAll('table tbody tr:not(.hidden)').length === 0) {
+                            goToPage(Math.max(1, currentPage - 1));
+                        } else {
+                            updatePaginationInfo();
+                        }
+                        
+                        // 显示删除成功的动画效果
+                        const deleteSuccess = document.createElement('div');
+                        deleteSuccess.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0 opacity-100';
+                        deleteSuccess.innerHTML = '<i class="fa fa-check-circle mr-2"></i>记录删除成功！';
+                        document.body.appendChild(deleteSuccess);
+                        
+                        // 3秒后移除成功提示
+                        setTimeout(() => {
+                            deleteSuccess.style.opacity = '0';
+                            deleteSuccess.style.transform = 'translateY(10px)';
+                            setTimeout(() => {
+                                deleteSuccess.remove();
+                            }, 300);
+                        }, 3000);
+                    }, 300);
+                }
+            });
+        });
+
+        // 批量删除功能
+        const selectAllCheckbox = document.getElementById('select-all');
+        const recordCheckboxes = document.querySelectorAll('.record-checkbox');
+        const batchDeleteBtn = document.getElementById('batch-delete-btn');
+
+        // 全选/取消全选
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            recordCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+            updateBatchDeleteButtonVisibility();
+        });
+
+        // 单个复选框变化时更新全选状态
+        recordCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateSelectAllStatus();
+                updateBatchDeleteButtonVisibility();
+            });
+        });
+
+        // 更新全选复选框状态
+        function updateSelectAllStatus() {
+            const checkedCount = document.querySelectorAll('.record-checkbox:checked').length;
+            selectAllCheckbox.checked = checkedCount === recordCheckboxes.length && recordCheckboxes.length > 0;
+            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < recordCheckboxes.length;
+        }
+
+        // 更新批量删除按钮可见性
+        function updateBatchDeleteButtonVisibility() {
+            const checkedCount = document.querySelectorAll('.record-checkbox:checked').length;
+            if (checkedCount > 0) {
+                batchDeleteBtn.classList.remove('hidden');
+            } else {
+                batchDeleteBtn.classList.add('hidden');
+            }
+        }
+
+        // 批量删除按钮点击事件
+        batchDeleteBtn.addEventListener('click', function() {
+            const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                alert('请选择要删除的记录');
+                return;
+            }
+
+            if (confirm(`确定要删除选中的 ${checkedBoxes.length} 条记录吗？`)) {
+                // 收集选中的行
+                const rowsToDelete = Array.from(checkedBoxes).map(checkbox => checkbox.closest('tr'));
+                
+                // 为每条记录添加删除动画
+                rowsToDelete.forEach((row, index) => {
+                    row.style.opacity = '0';
+                    setTimeout(() => {
+                        row.remove();
+                        
+                        // 最后一条记录删除后显示提示
+                        if (index === rowsToDelete.length - 1) {
+                            // 显示删除成功的动画效果
+                            const deleteSuccess = document.createElement('div');
+                            deleteSuccess.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0 opacity-100';
+                            deleteSuccess.innerHTML = `<i class="fa fa-check-circle mr-2"></i>成功删除 ${rowsToDelete.length} 条记录！`;
+                            document.body.appendChild(deleteSuccess);
+                            
+                            // 3秒后移除成功提示
+                            setTimeout(() => {
+                                deleteSuccess.classList.add('translate-y-10', 'opacity-0');
+                                setTimeout(() => {
+                                    document.body.removeChild(deleteSuccess);
+                                }, 300);
+                            }, 3000);
+                            
+                            // 更新状态
+                             selectAllCheckbox.checked = false;
+                             batchDeleteBtn.classList.add('hidden');
+                              
+                            // 重新计算并更新分页信息
+                            const remainingRecords = document.querySelectorAll('table tbody tr').length;
+                            const totalPages = Math.ceil(remainingRecords / recordsPerPage);
+                            
+                            // 如果当前页没有记录了，回退到上一页
+                            if (remainingRecords > 0 && document.querySelectorAll('table tbody tr:not(.hidden)').length === 0) {
+                                goToPage(Math.max(1, currentPage - 1));
+                            } else {
+                                updatePaginationInfo();
+                            }
+                         }
+                    }, index * 100); // 为了动画效果，每条记录删除有延迟
+                });
+            }
+        });
+        
+        // 导航栏滚动效果
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 10) {
+                nav.classList.add('py-2');
+                nav.classList.remove('py-3');
+            } else {
+                nav.classList.add('py-3');
+                nav.classList.remove('py-2');
+            }
+        });
+        
+        // 分页相关全局变量
+        let currentPage = 1;
+        const recordsPerPage = 4;
+        
+        // 更新分页信息
+        function updatePaginationInfo() {
+            const totalRecords = document.querySelectorAll('table tbody tr').length;
+            
+            // 如果是显示全部模式
+            if (showAllRecords) {
+                document.getElementById('display-mode-text').textContent = `共 ${totalRecords} 条结果`;
+                return;
+            }
+            
+            // 分页模式下的计算
+            const showingStart = totalRecords > 0 ? (currentPage - 1) * recordsPerPage + 1 : 0;
+            const showingEnd = Math.min(currentPage * recordsPerPage, totalRecords);
+            
+            document.getElementById('showing-start').textContent = showingStart;
+            document.getElementById('showing-end').textContent = showingEnd;
+            document.getElementById('total-records').textContent = totalRecords;
+            document.getElementById('display-mode-text').innerHTML = `显示第 <span class="font-medium" id="showing-start">${showingStart}</span> 到 <span class="font-medium" id="showing-end">${showingEnd}</span> 条，共 <span class="font-medium" id="total-records">${totalRecords}</span> 条结果`;
+            
+            console.log('分页信息更新:', {totalRecords, currentPage, showingStart, showingEnd}); // 调试信息
+            
+            // 当没有记录时显示空状态
+            const tableElement = document.querySelector('table');
+            const tableContainer = tableElement ? tableElement.parentNode : null;
+            const paginationContainer = document.querySelector('#pagination-container');
+            
+            if (totalRecords === 0 && tableContainer) {
+                // 保存表头和其他信息
+                const tableHeader = document.querySelector('table thead');
+                
+                // 清空容器并添加空状态提示
+                tableContainer.innerHTML = '';
+                
+                const emptyState = document.createElement('div');
+                emptyState.className = 'text-center py-12 text-gray-500 bg-gray-50 rounded-lg';
+                emptyState.innerHTML = `
+                    <div class="text-6xl mb-4">📋</div>
+                    <h3 class="text-lg font-medium mb-2">暂无历史记录</h3>
+                    <p class="text-sm">您的分析记录将显示在这里</p>
+                `;
+                
+                tableContainer.appendChild(emptyState);
+            }
+            
+            // 显示或隐藏分页控件
+            if (paginationContainer) {
+                if (totalRecords <= recordsPerPage) {
+                    paginationContainer.classList.add('hidden');
+                } else {
+                    paginationContainer.classList.remove('hidden');
+                    updatePaginationButtons(Math.ceil(totalRecords / recordsPerPage));
+                }
+            }
+            
+            // 处理移动端查看更多按钮
+            const mobileLoadMoreBtn = document.getElementById('mobile-load-more');
+            const totalPages = Math.ceil(totalRecords / recordsPerPage);
+            if (mobileLoadMoreBtn) {
+                if (totalRecords <= recordsPerPage || currentPage >= totalPages) {
+                    mobileLoadMoreBtn.classList.add('hidden');
+                } else {
+                    mobileLoadMoreBtn.classList.remove('hidden');
+                }
+            }
+        }
+        
+        // 更新分页按钮状态
+        function updatePaginationButtons(totalPages) {
+            const prevButton = document.querySelector('.pagination-prev');
+            const nextButton = document.querySelector('.pagination-next');
+            const pageButtons = document.querySelectorAll('.pagination-page');
+            
+            // 禁用/启用上一页和下一页按钮
+            if (prevButton) {
+                prevButton.disabled = currentPage === 1;
+                prevButton.classList.toggle('opacity-50', currentPage === 1);
+                prevButton.classList.toggle('cursor-not-allowed', currentPage === 1);
+            }
+            
+            if (nextButton) {
+                nextButton.disabled = currentPage === totalPages;
+                nextButton.classList.toggle('opacity-50', currentPage === totalPages);
+                nextButton.classList.toggle('cursor-not-allowed', currentPage === totalPages);
+            }
+            
+            // 更新页码按钮的活动状态
+            pageButtons.forEach(button => {
+                const pageNum = parseInt(button.textContent);
+                
+                // 更新活动状态样式
+                if (pageNum === currentPage) {
+                    button.classList.add('bg-primary', 'text-white');
+                    button.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                } else {
+                    button.classList.remove('bg-primary', 'text-white');
+                    button.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                }
+                
+                // 根据总页数调整显示的页码
+                if (totalPages <= 9) {
+                    // 如果总页数小于等于9，显示所有页码
+                    button.classList.remove('hidden');
+                } else {
+                    // 复杂的页码显示逻辑
+                    if (pageNum === 1 || pageNum === totalPages ||
+                        (pageNum >= currentPage - 2 && pageNum <= currentPage + 2) ||
+                        (currentPage <= 5 && pageNum <= 7) ||
+                        (currentPage >= totalPages - 4 && pageNum >= totalPages - 6)) {
+                        button.classList.remove('hidden');
+                    } else {
+                        button.classList.add('hidden');
+                    }
+                }
+            });
+        }
+        
+        // 全局变量控制是否显示全部记录
+        let showAllRecords = false;
+        
+        // 从localStorage同步分析结果到历史记录表格
+        function syncAnalysisHistory() {
+            try {
+                // 从localStorage获取分析历史
+                let historyRecords = JSON.parse(localStorage.getItem('historyRecords')) || [];
+                
+                console.log(`从localStorage读取到的记录数量: ${historyRecords.length}`);
+                
+                // 如果没有历史记录，创建一个示例记录以便测试
+                if (historyRecords.length === 0) {
+                    console.log('localStorage中没有分析历史记录');
+                    return;
+                }
+                
+                // 使用具体的选择器确保找到正确的表格
+                const tableBody = document.querySelector('#history-table tbody');
+                if (!tableBody) {
+                    console.error('错误: 未找到历史记录表格的tbody元素');
+                    return;
+                }
+                
+                console.log('成功找到历史记录表格');
+                
+                // 获取所有已有的记录ID
+                const existingIds = new Set();
+                document.querySelectorAll('#history-table tbody tr').forEach(row => {
+                    const checkbox = row.querySelector('input.record-checkbox');
+                    if (checkbox && checkbox.dataset.id) {
+                        existingIds.add(checkbox.dataset.id);
+                    }
+                });
+                
+                console.log(`表格中已存在的记录ID数量: ${existingIds.size}`);
+                
+                // 添加新的记录
+                let addedCount = 0;
+                
+                console.log('开始处理历史记录，准备添加新记录到表格');
+                
+                historyRecords.forEach((record) => {
+                    // 生成唯一ID
+                    const recordId = `record-${record.timestamp}`;
+                    
+                    // 只添加不存在的记录
+                        if (!existingIds.has(recordId)) {
+                            console.log(`添加新记录: ${record.date} ${record.model} 健康指数:${record.healthIndex}`);
+                            
+                            const row = document.createElement('tr');
+                            row.className = 'table-row-hover transition-colors';
+                            
+                            // 计算记录的健康状态标签
+                            let statusClass = 'bg-yellow-100 text-yellow-800';
+                            let statusText = '一般';
+                            if (record.healthIndex >= 80) {
+                                statusClass = 'bg-green-100 text-green-800';
+                                statusText = '良好';
+                            } else if (record.healthIndex < 60) {
+                                statusClass = 'bg-red-100 text-red-800';
+                                statusText = '较差';
+                            }
+                            
+                            // 设置行内容
+                            row.innerHTML = `
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="${recordId}">
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${record.date}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.model}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.healthIndex}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${statusText}</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                                    <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                                </td>
+                            `;
+                            
+                            // 添加到表格顶部
+                            tableBody.insertBefore(row, tableBody.firstChild);
+                            addedCount++;
+                        }
+                });
+                
+                // 如果添加了新记录，重新绑定事件监听器
+                if (addedCount > 0) {
+                    // 重新绑定删除按钮事件
+                    const deleteButtons = document.querySelectorAll('.delete-btn');
+                    deleteButtons.forEach(button => {
+                        button.onclick = function(e) {
+                            e.preventDefault();
+                            if (confirm('确定要删除这条记录吗？')) {
+                                const row = this.closest('tr');
+                                row.style.opacity = '0';
+                                setTimeout(() => {
+                                    row.remove();
+                                    
+                                    // 重新计算并更新分页信息
+                                    const remainingRecords = document.querySelectorAll('table tbody tr').length;
+                                    const totalPages = Math.ceil(remainingRecords / recordsPerPage);
+                                    
+                                    // 如果当前页没有记录了，回退到上一页
+                                    if (remainingRecords > 0 && document.querySelectorAll('table tbody tr:not(.hidden)').length === 0) {
+                                        goToPage(Math.max(1, currentPage - 1));
+                                    } else {
+                                        updatePaginationInfo();
+                                    }
+                                    
+                                    // 显示删除成功的动画效果
+                                    const deleteSuccess = document.createElement('div');
+                                    deleteSuccess.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0 opacity-100';
+                                    deleteSuccess.innerHTML = '<i class="fa fa-check-circle mr-2"></i>记录删除成功！';
+                                    document.body.appendChild(deleteSuccess);
+                                    
+                                    // 3秒后移除成功提示
+                                    setTimeout(() => {
+                                        deleteSuccess.style.opacity = '0';
+                                        deleteSuccess.style.transform = 'translateY(10px)';
+                                        setTimeout(() => {
+                                            deleteSuccess.remove();
+                                        }, 300);
+                                    }, 3000);
+                                }, 300);
+                            }
+                        };
+                    });
+                    
+                    // 重新绑定查看详情按钮事件
+                    const viewButtons = document.querySelectorAll('a[href="#"]');
+                    viewButtons.forEach(button => {
+                        if (button.textContent.includes('查看详情')) {
+                            button.onclick = function(e) {
+                                e.preventDefault();
+                                alert('查看分析详情');
+                            };
+                        }
+                    });
+                    
+                    // 重新绑定表格行悬停效果
+                    const tableRows = document.querySelectorAll('tbody tr');
+                    tableRows.forEach(row => {
+                        row.onmouseenter = function() {
+                            this.classList.add('table-row-hover');
+                        };
+                        
+                        row.onmouseleave = function() {
+                            this.classList.remove('table-row-hover');
+                        };
+                    });
+                    
+                    // 更新记录复选框相关逻辑
+                    const recordCheckboxes = document.querySelectorAll('.record-checkbox');
+                    recordCheckboxes.forEach(checkbox => {
+                        checkbox.onchange = function() {
+                            updateSelectAllStatus();
+                            updateBatchDeleteButtonVisibility();
+                        };
+                    });
+                }
+            } catch (error) {
+                console.error('同步分析历史时出错:', error);
+            }
+        }
+        
+        // 跳转到指定页码
+        function goToPage(pageNum, forceShowAll = false) {
+            const totalRecords = document.querySelectorAll('table tbody tr').length;
+            const totalPages = Math.ceil(totalRecords / recordsPerPage);
+            
+            // 如果强制显示全部记录
+            if (forceShowAll) {
+                showAllRecords = true;
+                
+                // 显示所有记录
+                const records = document.querySelectorAll('table tbody tr');
+                records.forEach(record => {
+                    record.classList.remove('hidden');
+                });
+                
+                // 更新UI状态
+                document.getElementById('show-all-btn').classList.add('hidden');
+                document.getElementById('show-paged-btn').classList.remove('hidden');
+                document.querySelector('#pagination-container').classList.add('hidden');
+                
+                // 更新显示信息文本
+                document.getElementById('display-mode-text').textContent = `共 ${totalRecords} 条结果`;
+                
+                // 重置选择状态
+                resetSelection();
+                
+                return;
+            }
+            
+            // 正常分页模式
+            showAllRecords = false;
+            
+            // 验证页码范围
+            if (pageNum < 1 || pageNum > totalPages) return;
+            
+            currentPage = pageNum;
+            
+            // 显示当前页的记录，隐藏其他记录
+            const records = document.querySelectorAll('table tbody tr');
+            records.forEach((record, index) => {
+                const recordPage = Math.floor(index / recordsPerPage) + 1;
+                if (recordPage === currentPage) {
+                    record.classList.remove('hidden');
+                } else {
+                    record.classList.add('hidden');
+                }
+            });
+            
+            // 更新UI状态
+            document.getElementById('show-all-btn').classList.remove('hidden');
+            document.getElementById('show-paged-btn').classList.add('hidden');
+            
+            // 显示分页控件
+            const paginationContainer = document.querySelector('#pagination-container');
+            if (paginationContainer) {
+                if (totalRecords > recordsPerPage) {
+                    paginationContainer.classList.remove('hidden');
+                }
+            }
+            
+            // 更新分页信息
+            updatePaginationInfo();
+            
+            // 重置选择状态
+            resetSelection();
+        }
+        
+        // 重置选择状态
+        function resetSelection() {
+            const selectAllCheckbox = document.getElementById('select-all');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = false;
+            }
+            
+            document.querySelectorAll('.record-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            const batchDeleteBtn = document.getElementById('batch-delete-btn');
+            if (batchDeleteBtn) {
+                batchDeleteBtn.classList.add('hidden');
+            }
+        }
+        
+        // 为分页按钮添加事件监听器
+        function setupPaginationEventListeners() {
+            const prevButton = document.querySelector('.pagination-prev');
+            const nextButton = document.querySelector('.pagination-next');
+            const pageButtons = document.querySelectorAll('.pagination-page');
+            
+            if (prevButton) {
+                prevButton.addEventListener('click', () => {
+                    if (currentPage > 1) {
+                        goToPage(currentPage - 1);
+                    }
+                });
+            }
+            
+            if (nextButton) {
+                nextButton.addEventListener('click', () => {
+                    const totalRecords = document.querySelectorAll('table tbody tr').length;
+                    const totalPages = Math.ceil(totalRecords / recordsPerPage);
+                    if (currentPage < totalPages) {
+                        goToPage(currentPage + 1);
+                    }
+                });
+            }
+            
+            pageButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const pageNum = parseInt(button.textContent);
+                    goToPage(pageNum);
+                });
+            });
+        }
+
+        // 初始化时更新分页信息
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从localStorage同步分析结果到历史记录
+            syncAnalysisHistory();
+            
+            // 重置当前页为1
+            currentPage = 1;
+            showAllRecords = false;
+            
+            // 初始化显示第一页记录
+            goToPage(1);
+            
+            // 更新分页信息
+            updatePaginationInfo();
+            
+            // 设置注册时间为当前时间
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+            
+            // 更新注册时间显示
+            const registerTimeElement = document.querySelector('p.text-gray-500.mb-2');
+            if (registerTimeElement) {
+                registerTimeElement.textContent = `注册时间：${formattedDate}`;
+            }
+            
+            // 显示全部按钮事件处理
+            document.getElementById('show-all-btn').addEventListener('click', function() {
+                goToPage(1, true);
+            });
+            
+            // 分页显示按钮事件处理
+            document.getElementById('show-paged-btn').addEventListener('click', function() {
+                goToPage(1);
+            });
+            
+            // 上一页按钮点击事件
+            const prevButton = document.querySelector('.pagination-prev');
+            if (prevButton) {
+                prevButton.addEventListener('click', function() {
+                    if (currentPage > 1) {
+                        goToPage(currentPage - 1);
+                    }
+                });
+            }
+            
+            // 下一页按钮点击事件
+            const nextButton = document.querySelector('.pagination-next');
+            if (nextButton) {
+                nextButton.addEventListener('click', function() {
+                    const totalRecords = document.querySelectorAll('table tbody tr').length;
+                    const totalPages = Math.ceil(totalRecords / recordsPerPage);
+                    if (currentPage < totalPages) {
+                        goToPage(currentPage + 1);
+                    }
+                });
+            }
+            
+            // 页码按钮点击事件
+            const pageButtons = document.querySelectorAll('.pagination-page');
+            pageButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const pageNum = parseInt(this.getAttribute('data-page'));
+                    goToPage(pageNum);
+                });
+            });
+            
+            // 移动端查看更多按钮点击事件
+            const mobileLoadMoreBtn = document.getElementById('mobile-load-more');
+            if (mobileLoadMoreBtn) {
+                mobileLoadMoreBtn.addEventListener('click', function() {
+                    const totalRecords = document.querySelectorAll('table tbody tr').length;
+                    const totalPages = Math.ceil(totalRecords / recordsPerPage);
+                    if (currentPage < totalPages) {
+                        goToPage(currentPage + 1);
+                        // 如果已经是最后一页，隐藏查看更多按钮
+                        if (currentPage === totalPages) {
+                            mobileLoadMoreBtn.classList.add('hidden');
+                        }
+                    }
+                });
+            }
+        });
+
+        // 当记录被删除后更新分页信息
+        // 在批量删除的回调函数中已经有更新逻辑，这里是额外的保障
+        
+        // 时间周期按钮切换
+        const periodButtons = document.querySelectorAll('.bg-gray-100');
+        periodButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                periodButtons.forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-700');
+                });
+                this.classList.remove('bg-gray-100', 'text-gray-700');
+                this.classList.add('bg-primary', 'text-white');
+            });
+        });
+    </script>
+<!-- 同步修复工具支持脚本 -->
+    <script>
+        // 检查是否有来自同步修复工具的请求
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // 检查sessionStorage中是否有同步脚本
+                const syncScript = sessionStorage.getItem('syncScript');
+                
+                if (syncScript) {
+                    console.log('=== 检测到同步修复工具请求 ===');
+                    console.log('正在执行同步逻辑...');
+                    
+                    // 执行同步脚本
+                    eval(syncScript);
+                    
+                    // 清除sessionStorage中的脚本，避免重复执行
+                    sessionStorage.removeItem('syncScript');
+                }
+            } catch (error) {
+                console.error('执行同步修复脚本时发生错误:', error);
+            }
+        });
+    </script>
+    </body>
+</html>

@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抑郁症分析系统 - 首页</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#8b5cf6',
+                        accent: '#ec4899',
+                        dark: '#1e1b4b',
+                        light: '#f8fafc',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                },
+            }
+        }
+    </script>
+    <style>
+        /* 基础样式定义 */
+        .content-auto { content-visibility: auto; }
+        .text-shadow { text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08); }
+        .text-shadow-lg { text-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .hover-scale { 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .hover-scale:hover { 
+            transform: scale(1.03); 
+        }
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .gradient-mask-b {
+            mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+        }
+        .bg-blur {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        /* 平滑滚动 */
+        html {
+            scroll-behavior: smooth;
+        }
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* 加载动画 */
+        .loader {
+            border-top-color: #3b82f6;
+            animation: spinner 0.8s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 overflow-x-hidden">
+    <!-- 导航栏 -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16 sm:h-20">
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-heartbeat text-primary text-2xl sm:text-3xl"></i>
+                    <span class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">抑郁症分析系统</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#about" class="text-gray-600 hover:text-primary transition-colors font-medium">关于抑郁症</a>
+                    <a href="#features" class="text-gray-600 hover:text-primary transition-colors font-medium">系统功能</a>
+                    <a href="#testimonials" class="text-gray-600 hover:text-primary transition-colors font-medium">用户反馈</a>
+                    <a href="login.html" class="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white px-5 py-2.5 rounded-full font-medium transition-all shadow-lg shadow-primary/20 hover-scale">登录</a>
+                </div>
+                <div class="md:hidden">
+                    <button id="menu-toggle" class="text-gray-700 hover:text-primary focus:outline-none">
+                        <i class="fa fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white/95 bg-blur shadow-lg border-t border-gray-100">
+            <div class="container mx-auto px-4 py-3">
+                <a href="#about" class="block py-3 px-4 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors">关于抑郁症</a>
+                <a href="#features" class="block py-3 px-4 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors">系统功能</a>
+                <a href="#testimonials" class="block py-3 px-4 text-gray-600 hover:bg-primary/5 hover:text-primary rounded-lg transition-colors">用户反馈</a>
+                <a href="login.html" class="block py-3 px-4 mt-2 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-medium text-center">登录</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 英雄区域 -->
+    <header class="pt-32 pb-24 sm:pt-40 sm:pb-32 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 relative overflow-hidden">
+        <!-- 背景装饰 -->
+        <div class="absolute top-0 left-0 w-full h-full">
+            <div class="absolute -top-10 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl"></div>
+            <div class="absolute top-1/3 -right-20 w-60 h-60 bg-secondary/10 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-20 left-1/3 w-80 h-80 bg-accent/10 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="flex flex-col lg:flex-row items-center gap-12">
+                <div class="w-full lg:w-1/2 text-center lg:text-left">
+                    <div class="inline-block mb-4 px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                        <i class="fa fa-lightbulb-o mr-1"></i> 智能心理健康分析平台
+                    </div>
+                    <h1 class="text-[clamp(2.5rem,6vw,4rem)] font-bold text-dark mb-6 leading-tight text-shadow-lg">
+                        关注<span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">心理健康</span><br>
+                        科学分析<span class="bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">抑郁症</span>
+                    </h1>
+                    <p class="text-lg sm:text-xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0">
+                        借助先进的机器学习算法和专业的心理健康模型，帮助您了解自身心理状态，早期发现潜在风险，及时干预和治疗。
+                    </p>
+                    <div class="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
+                        <a href="login.html" class="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white px-8 py-3.5 rounded-full font-semibold transition-all shadow-xl shadow-primary/20 hover-scale text-center">
+                            <i class="fa fa-rocket mr-2"></i> 开始分析之旅
+                        </a>
+                        <a href="#features" class="bg-white hover:bg-gray-50 text-dark px-8 py-3.5 rounded-full font-semibold transition-all shadow-lg hover-scale border border-gray-100 text-center">
+                            <i class="fa fa-info-circle mr-2"></i> 了解系统功能
+                        </a>
+                    </div>
+                    
+                    <!-- 信任标识 -->
+                    <div class="mt-12">
+                        <p class="text-sm text-gray-500 mb-4">受到专业机构的信任</p>
+                        <div class="flex flex-wrap justify-center lg:justify-start gap-8 items-center">
+                            <div class="text-gray-400 font-semibold text-lg">中国心理学会</div>
+                            <div class="text-gray-400 font-semibold text-lg">健康医疗联盟</div>
+                            <div class="text-gray-400 font-semibold text-lg">心理健康协会</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="w-full lg:w-1/2 relative animate-float">
+                    <div class="relative rounded-2xl overflow-hidden shadow-2xl">
+                        <img src="https://picsum.photos/id/237/800/600" alt="心理健康分析" class="w-full h-auto rounded-2xl">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end">
+                            <div class="p-6 text-white">
+                                <h3 class="text-xl font-bold mb-2">AI驱动的心理健康评估</h3>
+                                <p>基于先进算法的精准分析与建议</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 浮动卡片 -->
+                    <div class="absolute -bottom-8 -left-8 bg-white rounded-xl p-4 shadow-xl max-w-[200px] animate-pulse-slow">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <div class="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                                <i class="fa fa-check text-success"></i>
+                            </div>
+                            <span class="font-semibold text-sm">80%治疗有效率</span>
+                        </div>
+                        <p class="text-xs text-gray-500">早期干预大大提高康复几率</p>
+                    </div>
+                    
+                    <div class="absolute -top-4 -right-4 bg-white rounded-xl p-4 shadow-xl max-w-[180px] animate-float" style="animation-delay: 1s;">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                <i class="fa fa-shield text-primary"></i>
+                            </div>
+                            <span class="font-semibold text-sm">隐私保护</span>
+                        </div>
+                        <p class="text-xs text-gray-500">所有数据均进行加密处理</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 关于抑郁症 -->
+    <section id="about" class="py-20 sm:py-28 bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <div class="inline-block mb-3 px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                    <i class="fa fa-book mr-1"></i> 了解抑郁症
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-dark mb-6">关于抑郁症，您需要知道的</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    抑郁症是一种常见的心理健康问题，影响着全球数百万人的生活质量。了解其症状、原因和治疗方法，是预防和干预的第一步。
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8 sm:gap-10">
+                <!-- 症状卡片 -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover border border-gray-50">
+                    <div class="w-16 h-16 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fa fa-stethoscope text-primary text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-dark mb-4">主要症状</h3>
+                    <ul class="text-gray-600 space-y-3">
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-3"></i>
+                            <span>持续的情绪低落、悲伤或空虚感，无法通过日常活动缓解</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-3"></i>
+                            <span>对曾经喜欢的活动失去兴趣或愉悦感，社交退缩</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-3"></i>
+                            <span>睡眠障碍，包括失眠或过度睡眠，睡眠质量差</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-primary mt-1 mr-3"></i>
+                            <span>精力下降，即使休息后仍感到疲劳或无力，难以集中注意力</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 原因卡片 -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover border border-gray-50">
+                    <div class="w-16 h-16 bg-secondary/10 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fa fa-search text-secondary text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-dark mb-4">潜在原因</h3>
+                    <ul class="text-gray-600 space-y-3">
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-secondary mt-1 mr-3"></i>
+                            <span>遗传因素和家族病史，有家族成员患抑郁症的人风险更高</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-secondary mt-1 mr-3"></i>
+                            <span>大脑中神经递质（如血清素、多巴胺）的失衡</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-secondary mt-1 mr-3"></i>
+                            <span>重大生活事件，如失去亲人、失业、离婚等压力源</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-secondary mt-1 mr-3"></i>
+                            <span>慢性疾病、长期疼痛或药物副作用等生理因素</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- 治疗卡片 -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover border border-gray-50">
+                    <div class="w-16 h-16 bg-accent/10 rounded-xl flex items-center justify-center mb-6">
+                        <i class="fa fa-medkit text-accent text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-dark mb-4">有效治疗</h3>
+                    <ul class="text-gray-600 space-y-3">
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-accent mt-1 mr-3"></i>
+                            <span>心理治疗，特别是认知行为疗法(CBT)和人际治疗</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-accent mt-1 mr-3"></i>
+                            <span>药物治疗，在专业医生指导下使用抗抑郁药物</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-accent mt-1 mr-3"></i>
+                            <span>生活方式改变，包括规律运动、健康饮食和充足睡眠</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-check-circle text-accent mt-1 mr-3"></i>
+                            <span>社会支持系统和心理咨询，建立健康的应对机制</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 统计数据 -->
+            <div class="mt-20 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-2xl p-10 relative overflow-hidden">
+                <div class="absolute -top-20 -right-20 w-60 h-60 bg-primary/10 rounded-full blur-3xl"></div>
+                <div class="absolute -bottom-20 -left-20 w-60 h-60 bg-secondary/10 rounded-full blur-3xl"></div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center relative z-10">
+                    <div class="p-6 bg-white/80 bg-blur rounded-xl shadow-lg">
+                        <div class="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-3">3.8亿</div>
+                        <p class="text-gray-700 font-medium">全球抑郁症患者</p>
+                    </div>
+                    <div class="p-6 bg-white/80 bg-blur rounded-xl shadow-lg">
+                        <div class="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-3">20%</div>
+                        <p class="text-gray-700 font-medium">中国患病率</p>
+                    </div>
+                    <div class="p-6 bg-white/80 bg-blur rounded-xl shadow-lg">
+                        <div class="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-3">70%</div>
+                        <p class="text-gray-700 font-medium">未接受治疗比例</p>
+                    </div>
+                    <div class="p-6 bg-white/80 bg-blur rounded-xl shadow-lg">
+                        <div class="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-3">80%</div>
+                        <p class="text-gray-700 font-medium">治疗有效率</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 系统功能 -->
+    <section id="features" class="py-20 sm:py-28 bg-gray-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <div class="inline-block mb-3 px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                    <i class="fa fa-cogs mr-1"></i> 核心功能
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-dark mb-6">先进的抑郁症分析系统</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    我们的系统使用前沿的机器学习技术，结合专业的心理健康模型，为您提供精准的分析和个性化的建议。
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="order-2 md:order-1">
+                    <div class="mb-10">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-primary/20">
+                                <i class="fa fa-line-chart text-white text-xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-dark">AI驱动的数据分析</h3>
+                        </div>
+                        <p class="text-gray-600 pl-16">
+                            上传您的心电脑电数据，系统将使用SVM或随机森林等先进机器学习模型进行深度分析，提供准确的心理健康评估结果。我们的算法经过大量临床数据训练，确保分析的可靠性。
+                        </p>
+                    </div>
+                    
+                    <div class="mb-10">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-secondary/20">
+                                <i class="fa fa-history text-white text-xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-dark">智能历史记录管理</h3>
+                        </div>
+                        <p class="text-gray-600 pl-16">
+                            系统自动保存您的分析记录，通过直观的图表展示您的心理健康变化趋势。您可以设置定期提醒，持续关注自己的心理状态，及时发现潜在问题。
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-accent rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-accent/20">
+                                <i class="fa fa-shield text-white text-xl"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-dark">银行级隐私保护</h3>
+                        </div>
+                        <p class="text-gray-600 pl-16">
+                            我们高度重视您的隐私安全，所有数据均进行端到端加密处理。我们严格遵守医疗隐私法规，确保您的个人信息和健康数据不被泄露或滥用。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="order-1 md:order-2 relative">
+                    <div class="rounded-2xl overflow-hidden shadow-2xl relative">
+                        <img src="https://picsum.photos/id/180/800/600" alt="系统分析界面" class="w-full h-auto rounded-2xl">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end">
+                            <div class="p-8 text-white">
+                                <h3 class="text-2xl font-bold mb-3">专业分析，触手可及</h3>
+                                <p class="mb-4">先进的AI技术，为您提供专业级的心理健康评估</p>
+                                <a href="login.html" class="inline-block px-6 py-2.5 bg-white text-primary rounded-full font-medium hover:bg-gray-100 transition-colors">
+                                    立即体验 <i class="fa fa-arrow-right ml-2"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 装饰元素 -->
+                    <div class="absolute -top-6 -right-6 w-24 h-24 bg-primary/20 rounded-full blur-2xl"></div>
+                    <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-secondary/20 rounded-full blur-2xl"></div>
+                </div>
+            </div>
+            
+            <!-- 使用步骤 -->
+            <div class="mt-24">
+                <h3 class="text-2xl font-bold text-center text-dark mb-12">如何使用我们的系统</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 sm:gap-8">
+                    <div class="bg-white rounded-2xl p-6 shadow-xl text-center card-hover border border-gray-50">
+                        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <span class="text-2xl font-bold text-primary">01</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-dark mb-3">注册并登录</h4>
+                        <p class="text-gray-600">
+                            创建您的个人账号，安全登录系统，开始您的心理健康之旅。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl p-6 shadow-xl text-center card-hover border border-gray-50">
+                        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <span class="text-2xl font-bold text-primary">02</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-dark mb-3">上传数据</h4>
+                        <p class="text-gray-600">
+                            上传您的心电脑电数据文件，支持多种格式，简单快捷。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl p-6 shadow-xl text-center card-hover border border-gray-50">
+                        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <span class="text-2xl font-bold text-primary">03</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-dark mb-3">选择模型</h4>
+                        <p class="text-gray-600">
+                            根据您的需求选择合适的分析模型，SVM或随机森林。
+                        </p>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl p-6 shadow-xl text-center card-hover border border-gray-50">
+                        <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <span class="text-2xl font-bold text-primary">04</span>
+                        </div>
+                        <h4 class="text-xl font-bold text-dark mb-3">查看报告</h4>
+                        <p class="text-gray-600">
+                            获取详细的分析报告和专业建议，了解您的心理健康状况。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 用户反馈 -->
+    <section id="testimonials" class="py-20 sm:py-28 bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <div class="inline-block mb-3 px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                    <i class="fa fa-comments mr-1"></i> 用户反馈
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-dark mb-6">用户如何评价我们</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+                    来自真实用户的使用体验和反馈，了解我们的系统如何帮助他们改善心理健康状况。
+                </p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- 反馈卡片1 -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover border border-gray-50">
+                    <div class="flex items-center mb-6">
+                        <div class="text-yellow-400 flex">
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-6 italic">
+                        "这个系统真的改变了我的生活。通过定期分析，我能够及时发现自己情绪的变化，并采取相应的措施。专业的建议让我找到了正确的治疗方向。"
+                    </p>
+                    <div class="flex items-center">
+                        <img src="https://picsum.photos/id/64/100/100" alt="用户头像" class="w-12 h-12 rounded-full mr-4 object-cover">
+                        <div>
+                            <h4 class="font-bold text-dark">张女士</h4>
+                            <p class="text-gray-500 text-sm">32岁，市场经理</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 反馈卡片2 -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover border border-gray-50">
+                    <div class="flex items-center mb-6">
+                        <div class="text-yellow-400 flex">
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-6 italic">
+                        "作为一名心理学研究者，我对这个系统的算法和分析能力印象深刻。它不仅提供了准确的评估，还能给出科学合理的建议，非常专业。"
+                    </p>
+                    <div class="flex items-center">
+                        <img src="https://picsum.photos/id/91/100/100" alt="用户头像" class="w-12 h-12 rounded-full mr-4 object-cover">
+                        <div>
+                            <h4 class="font-bold text-dark">李医生</h4>
+                            <p class="text-gray-500 text-sm">45岁，心理医师</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 反馈卡片3 -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 card-hover border border-gray-50">
+                    <div class="flex items-center mb-6">
+                        <div class="text-yellow-400 flex">
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star"></i>
+                            <i class="fa fa-star-half-o"></i>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-6 italic">
+                        "界面简洁直观，使用非常方便。我特别喜欢它的历史记录功能，可以清楚地看到自己一段时间内的情绪变化，这对我的治疗很有帮助。"
+                    </p>
+                    <div class="flex items-center">
+                        <img src="https://picsum.photos/id/177/100/100" alt="用户头像" class="w-12 h-12 rounded-full mr-4 object-cover">
+                        <div>
+                            <h4 class="font-bold text-dark">王先生</h4>
+                            <p class="text-gray-500 text-sm">28岁，软件工程师</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 行动召唤 -->
+    <section class="py-20 sm:py-28 bg-gradient-to-r from-primary to-secondary text-white relative overflow-hidden">
+        <!-- 背景装饰 -->
+        <div class="absolute inset-0">
+            <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <h2 class="text-3xl sm:text-5xl font-bold mb-8 max-w-4xl mx-auto text-shadow">
+                迈出关注心理健康的第一步
+            </h2>
+            <p class="text-xl sm:text-2xl mb-10 max-w-3xl mx-auto opacity-90">
+                早期检测和干预是预防和治疗抑郁症的关键。立即注册并使用我们的分析系统，守护您和家人的心理健康。
+            </p>
+            <a href="login.html" class="bg-white text-primary hover:bg-gray-100 px-10 py-4 rounded-full font-semibold text-lg transition-all shadow-2xl shadow-primary/30 hover-scale inline-block">
+                <i class="fa fa-user-plus mr-2"></i> 立即注册并开始分析
+            </a>
+            
+            <!-- 底部装饰 -->
+            <div class="mt-16 flex flex-wrap justify-center gap-8 items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-check-circle text-white"></i>
+                    <span>无需信用卡</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-check-circle text-white"></i>
+                    <span>5分钟快速分析</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-check-circle text-white"></i>
+                    <span>专业建议</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-check-circle text-white"></i>
+                    <span>隐私保障</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-gray-300 py-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-10">
+                <div>
+                    <div class="flex items-center space-x-2 mb-6">
+                        <i class="fa fa-heartbeat text-primary text-2xl"></i>
+                        <span class="text-xl font-bold text-white">抑郁症分析系统</span>
+                    </div>
+                    <p class="text-gray-400 mb-6">
+                        借助先进技术，守护心理健康，让每个人都能拥有积极向上的生活状态。
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                            <i class="fa fa-weixin text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                            <i class="fa fa-weibo text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                            <i class="fa fa-qq text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-primary transition-colors">
+                            <i class="fa fa-envelope-o text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-semibold text-lg mb-6">快速链接</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#about" class="text-gray-400 hover:text-primary transition-colors">关于抑郁症</a></li>
+                        <li><a href="#features" class="text-gray-400 hover:text-primary transition-colors">系统功能</a></li>
+                        <li><a href="#testimonials" class="text-gray-400 hover:text-primary transition-colors">用户反馈</a></li>
+                        <li><a href="login.html" class="text-gray-400 hover:text-primary transition-colors">用户登录</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-semibold text-lg mb-6">支持与帮助</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-primary transition-colors">常见问题</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-primary transition-colors">使用指南</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-primary transition-colors">联系我们</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-primary transition-colors">隐私政策</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-white font-semibold text-lg mb-6">联系方式</h4>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <i class="fa fa-envelope-o mr-3 mt-1 text-primary text-lg"></i>
+                            <span class="text-gray-400">support@depression-analysis.com</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-phone mr-3 mt-1 text-primary text-lg"></i>
+                            <span class="text-gray-400">400-123-4567</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fa fa-map-marker mr-3 mt-1 text-primary text-lg"></i>
+                            <span class="text-gray-400">北京市海淀区中关村科技园区8号楼</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="mt-12 pt-8 border-t border-gray-800 text-center">
+                <p class="text-gray-500 mb-4">
+                    <span class="inline-block mx-2"><i class="fa fa-shield text-primary mr-1"></i> 隐私加密</span>
+                    <span class="inline-block mx-2"><i class="fa fa-lock text-primary mr-1"></i> 安全保障</span>
+                    <span class="inline-block mx-2"><i class="fa fa-certificate text-primary mr-1"></i> 专业认证</span>
+                </p>
+                <p class="text-gray-600">&copy; 2023 抑郁症分析系统. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // 移动端菜单切换
+        const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        menuToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        // 导航栏滚动效果
+        const navbar = document.getElementById('navbar');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 10) {
+                navbar.classList.add('bg-white/90', 'bg-blur', 'shadow-md');
+                navbar.classList.remove('bg-transparent');
+            } else {
+                navbar.classList.add('bg-transparent');
+                navbar.classList.remove('bg-white/90', 'bg-blur', 'shadow-md');
+            }
+        });
+        
+        // 初始化导航栏状态
+        if (window.scrollY > 10) {
+            navbar.classList.add('bg-white/90', 'bg-blur', 'shadow-md');
+        } else {
+            navbar.classList.add('bg-transparent');
+        }
+        
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    
+                    // 关闭移动端菜单
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenu.classList.add('hidden');
+                    }
+                }
+            });
+        });
+        
+        // 添加进入视窗动画
+        const animateOnScroll = () => {
+            const elements = document.querySelectorAll('.card-hover');
+            
+            elements.forEach(element => {
+                const elementPosition = element.getBoundingClientRect().top;
+                const screenPosition = window.innerHeight / 1.2;
+                
+                if (elementPosition < screenPosition) {
+                    element.classList.add('opacity-100', 'translate-y-0');
+                    element.classList.remove('opacity-0', 'translate-y-10');
+                }
+            });
+        };
+        
+        // 初始化元素样式
+        document.querySelectorAll('.card-hover').forEach(element => {
+            element.classList.add('transition-all', 'duration-700', 'opacity-0', 'translate-y-10');
+        });
+        
+        // 添加滚动监听
+        window.addEventListener('scroll', animateOnScroll);
+        
+        // 初始触发一次动画
+        animateOnScroll();
+    </script>
+</body>
+</html>
