@@ -7,6 +7,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="localdb.js"></script>
+    <script src="sync_user_profile.js"></script>
+    <script src="ultimate_sync_fix.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -51,9 +54,9 @@
                 <a href="analysis.html" class="text-primary font-medium">分析中心</a>
                 <a href="user_center.html" class="text-gray-600 hover:text-primary transition-colors">用户中心</a>
                 <div class="flex items-center space-x-2">
-                    <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-10 h-10 rounded-full object-cover border-2 border-primary">
-                    <span class="text-gray-700 font-medium">用户名称</span>
-                </div>
+                        <img src="https://picsum.photos/id/91/40/40" alt="用户头像" id="nav-avatar-desktop" class="w-10 h-10 rounded-full object-cover border-2 border-primary">
+                        <span id="nav-username-desktop" class="text-gray-700 font-medium">周光泽</span>
+                    </div>
                 <a href="login.html" class="text-gray-600 hover:text-danger transition-colors">
                     <i class="fa fa-sign-out"></i> 退出
                 </a>
@@ -69,9 +72,9 @@
             <a href="analysis.html" class="block py-2 text-primary font-medium">分析中心</a>
             <a href="user_center.html" class="block py-2 text-gray-600 hover:text-primary">用户中心</a>
             <div class="py-2 flex items-center space-x-2 border-t border-gray-100">
-                <img src="https://picsum.photos/id/64/40/40" alt="用户头像" class="w-8 h-8 rounded-full object-cover border-2 border-primary">
-                <span class="text-gray-700 font-medium">用户名称</span>
-            </div>
+                    <img src="https://picsum.photos/id/91/40/40" alt="用户头像" id="nav-avatar-mobile" class="w-8 h-8 rounded-full object-cover border-2 border-primary">
+                        <span id="nav-username-mobile" class="text-gray-700 font-medium">周光泽</span>
+                </div>
             <a href="login.html" class="block py-2 text-danger font-medium border-t border-gray-100">
                 <i class="fa fa-sign-out mr-2"></i> 退出
             </a>
@@ -666,6 +669,27 @@
             
             // 保存回localStorage
             localStorage.setItem('analysisHistory', JSON.stringify(historyRecords));
+            
+            // 直接保存到IndexedDB，确保用户中心能看到新记录
+            try {
+                if (typeof LocalDB !== 'undefined') {
+                    const localDB = new LocalDB();
+                    localDB.addAnalysisRecord(resultData).then(() => {
+                        console.log('✅ 分析记录已保存到IndexedDB');
+                        
+                        // 触发全局同步，确保所有页面都能看到更新
+                        if (window.ultimateSyncSystem && typeof window.ultimateSyncSystem.triggerGlobalSync === 'function') {
+                            window.ultimateSyncSystem.triggerGlobalSync();
+                        }
+                    }).catch(err => {
+                        console.error('❌ 保存分析记录到IndexedDB失败:', err);
+                    });
+                } else {
+                    console.warn('⚠️ LocalDB未定义，无法直接保存到IndexedDB');
+                }
+            } catch (error) {
+                console.error('❌ 保存分析记录到IndexedDB外层捕获失败:', error);
+            }
         }
         
         // 新建分析按钮点击事件
@@ -770,6 +794,187 @@
             } else {
                 nav.classList.add('py-3');
                 nav.classList.remove('py-2');
+            }
+        });
+        
+        // 加载用户资料
+        async function loadUserProfile() {
+            try {
+                // 首先检查是否有同步数据
+                const syncData = localStorage.getItem('userProfileData');
+                if (syncData) {
+                    const profile = JSON.parse(syncData);
+                    updateProfileDisplay(profile);
+                    console.log('从同步数据加载用户资料');
+                    return;
+                }
+                
+                // 原有数据库加载逻辑
+                if (typeof LocalDB === 'undefined') {
+                    console.warn('LocalDB类未定义，无法加载用户资料');
+                    return;
+                }
+                
+                const localDB = new LocalDB();
+                const profile = await localDB.getUserProfile();
+                
+                if (profile) {
+                    updateProfileDisplay(profile);
+                    
+                    // 保存到同步存储
+                    localStorage.setItem('userProfileData', JSON.stringify(profile));
+                }
+            } catch (error) {
+                console.error('加载用户资料失败:', error);
+            }
+        }
+        
+        // 更新资料显示
+        function updateProfileDisplay(profile) {
+            // 设置默认值
+            const defaultName = profile.name || profile.fullname || '用户';
+            const defaultAvatar = profile.avatar || 'https://picsum.photos/id/91/40/40';
+            
+            // 更新桌面端导航栏
+            const desktopUserDiv = document.querySelector('.hidden.md\:flex.items-center.space-x-6 > div.flex.items-center.space-x-2');
+            if (desktopUserDiv) {
+                const desktopAvatar = desktopUserDiv.querySelector('img');
+                const desktopName = desktopUserDiv.querySelector('span');
+                if (desktopAvatar) {
+                    desktopAvatar.src = defaultAvatar;
+                    desktopAvatar.alt = defaultName;
+                }
+                if (desktopName) {
+                    desktopName.textContent = defaultName;
+                }
+                console.log('已更新桌面端用户信息');
+            }
+            
+            // 更新移动端导航栏
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu) {
+                const mobileUserDiv = mobileMenu.querySelector('div.flex.items-center.space-x-2');
+                if (mobileUserDiv) {
+                    const mobileAvatar = mobileUserDiv.querySelector('img');
+                    const mobileName = mobileUserDiv.querySelector('span');
+                    if (mobileAvatar) {
+                        mobileAvatar.src = defaultAvatar;
+                        mobileAvatar.alt = defaultName;
+                    }
+                    if (mobileName) {
+                        mobileName.textContent = defaultName;
+                    }
+                    console.log('已更新移动端用户信息');
+                }
+            }
+        }
+        
+        // 页面加载完成后初始化
+        // 设置用户资料同步监听器（保留以确保兼容性）
+        function setupProfileSyncListener() {
+            console.log('设置用户资料同步监听器（兼容模式）');
+            
+            // 如果终极同步系统已加载，优先使用它
+            if (window.ultimateSyncSystem) {
+                console.log('✅ 检测到终极同步系统已加载，使用其同步功能');
+                
+                // 监听自定义事件
+                window.addEventListener('ultimateProfileUpdated', (e) => {
+                    console.log('🔄 接收到终极同步系统的资料更新事件');
+                    // 如有需要可以在这里添加额外处理
+                });
+            } else {
+                // 备用方案：使用原有同步逻辑
+                console.log('⚠️ 终极同步系统未加载，使用备用同步逻辑');
+                
+                // 监听localStorage变化
+                window.addEventListener('storage', (e) => {
+                    if (e.key === 'userProfileData' || e.key === 'userProfileUpdated' || e.key === 'userProfileLastUpdate') {
+                        console.log('检测到用户资料变化，重新加载...');
+                        loadUserProfile();
+                    }
+                });
+                
+                // 设置定期检查（每30秒）
+                setInterval(() => {
+                    const lastUpdate = localStorage.getItem('userProfileLastUpdate');
+                    if (lastUpdate) {
+                        console.log('定期检查用户资料更新');
+                    }
+                }, 30000);
+            }
+        }
+
+        // 从localStorage获取登录用户信息
+        function getLoggedInUser() {
+            try {
+                // 优先使用userCredentials键，保持与其他页面一致性
+                const credentials = localStorage.getItem('userCredentials');
+                if (credentials) {
+                    return JSON.parse(credentials);
+                }
+                // 兼容旧版逻辑
+                if (localStorage.getItem('userLoggedIn') === 'true') {
+                    const currentUser = localStorage.getItem('currentUser');
+                    return currentUser ? JSON.parse(currentUser) : null;
+                }
+                return null;
+            } catch (error) {
+                console.error('获取用户信息失败:', error);
+                return null;
+            }
+        }
+        
+        // 检查用户是否已登录
+        function checkLoginStatus() {
+            try {
+                const user = getLoggedInUser();
+                
+                // 如果没有登录凭证，重定向到登录页面
+                if (!user || !user.username) {
+                    console.warn('未检测到登录状态，重定向到登录页面...');
+                    window.location.href = 'login.html';
+                    return false;
+                }
+                
+                console.log('已检测到登录状态，当前用户:', user.username);
+                return true;
+            } catch (error) {
+                console.error('检查登录状态时发生错误:', error);
+                window.location.href = 'login.html';
+                return false;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🌐 分析中心页面初始化');
+            
+            // 检查登录状态
+            if (!checkLoginStatus()) {
+                // 如果未登录，不执行后续代码
+                return;
+            }
+            
+            // 终极同步系统会自动处理用户资料同步
+            // 如果需要手动初始加载一次
+            if (window.ultimateSyncSystem && typeof window.ultimateSyncSystem.syncUserProfile === 'function') {
+                await window.ultimateSyncSystem.syncUserProfile();
+            } else {
+                // 备用方案：使用原有加载逻辑
+                await loadUserProfile();
+                
+                // 保留原有监听，确保兼容性
+                if (typeof LocalDB !== 'undefined') {
+                    try {
+                        const localDB = new LocalDB();
+                        localDB.subscribe('profileUpdated', () => {
+                            console.log('用户资料已更新，重新加载...');
+                            loadUserProfile();
+                        });
+                    } catch (error) {
+                        console.error('订阅用户资料更新失败:', error);
+                    }
+                }
             }
         });
     </script>

@@ -6,6 +6,7 @@
     <title>抑郁症分析系统 - 用户登录</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="sync_user_profile.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -36,7 +37,12 @@
                 box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
             }
             .input-focus {
-                @apply focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200;
+                transition: all 200ms;
+            }
+            .input-focus:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+                border-color: rgb(59, 130, 246);
             }
         }
     </style>
@@ -185,71 +191,160 @@
 
     <!-- JavaScript -->
     <script>
-        // 密码显示切换
-        const togglePassword = document.getElementById('toggle-password');
-        const passwordInput = document.getElementById('password');
-        
-        togglePassword.addEventListener('click', function() {
-            // 切换密码字段的类型
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
+        // 等待DOM完全加载后再执行脚本
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM已完全加载，开始初始化登录页面...');
             
-            // 切换图标
-            this.querySelector('i').classList.toggle('fa-eye');
-            this.querySelector('i').classList.toggle('fa-eye-slash');
-        });
-        
-        // 表单提交处理
-        const loginForm = document.getElementById('login-form');
-        const loginButton = document.getElementById('login-button');
-        
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+            // 密码显示切换
+            const togglePassword = document.getElementById('toggle-password');
+            const passwordInput = document.getElementById('password');
             
-            // 获取表单数据
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const rememberMe = document.getElementById('remember-me').checked;
-            
-            // 简单的表单验证
-            if (!username || !password) {
-                alert('请输入用户名和密码');
-                return;
+            if (togglePassword && passwordInput) {
+                togglePassword.addEventListener('click', function() {
+                    // 切换密码字段的类型
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    
+                    // 切换图标
+                    const iconElement = this.querySelector('i');
+                    if (iconElement) {
+                        iconElement.classList.toggle('fa-eye');
+                        iconElement.classList.toggle('fa-eye-slash');
+                    }
+                });
             }
             
-            // 模拟登录请求
-            loginButton.disabled = true;
-            loginButton.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>登录中...';
+            // 辅助函数 - 保存和加载凭证
+            function loadSavedCredentials() {
+                try {
+                    const saved = localStorage.getItem('savedCredentials');
+                    return saved ? JSON.parse(saved) : null;
+                } catch (error) {
+                    console.error('加载保存的凭证失败:', error);
+                    return null;
+                }
+            }
             
-            // 模拟网络延迟
-            setTimeout(function() {
-                // 这里应该是实际的登录API调用
+            // 登录成功处理函数
+            function handleLoginSuccess(username, password, rememberMe, userInfo) {
+                // 创建用户资料对象
+                const userProfile = {
+                    username: username,
+                    fullname: userInfo.fullname,
+                    avatar: userInfo.avatar,
+                    loggedIn: true,
+                    loginTime: new Date().toISOString()
+                };
+                
+                // 保存登录状态到localStorage
+                localStorage.setItem('userLoggedIn', 'true');
+                localStorage.setItem('currentUser', JSON.stringify(userProfile));
+                localStorage.setItem('userCredentials', JSON.stringify({
+                    username: username,
+                    fullname: userInfo.fullname,
+                    avatar: userInfo.avatar,
+                    loginTime: userProfile.loginTime
+                }));
+                
+                // 处理记住我功能
+                if (rememberMe) {
+                    localStorage.setItem('savedCredentials', JSON.stringify({ username, password }));
+                } else {
+                    localStorage.removeItem('savedCredentials');
+                }
+                
+                // 触发全局用户资料同步
+                if (window.userProfileSync && typeof window.userProfileSync.triggerGlobalUpdate === 'function') {
+                    window.userProfileSync.triggerGlobalUpdate(userProfile);
+                }
+                
                 // 登录成功后跳转到用户中心
-                window.location.href = 'user_center.html';
-            }, 1500);
-        });
-        
-        // 添加输入框动画效果
-        const inputs = document.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.classList.add('ring-2', 'ring-primary/20', 'rounded-lg');
+                setTimeout(() => {
+                    window.location.href = 'user_center.html';
+                }, 100);
+            }
+            
+            // 表单提交处理
+            const loginForm = document.getElementById('login-form');
+            const loginButton = document.getElementById('login-button');
+            
+            if (loginForm && loginButton) {
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // 获取表单数据
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    const rememberMe = document.getElementById('remember-me').checked;
+                    
+                    // 简单的表单验证
+                    if (!username || !password) {
+                        alert('请输入用户名和密码');
+                        return;
+                    }
+                    
+                    // 模拟登录请求
+                    loginButton.disabled = true;
+                    loginButton.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>登录中...';
+                    
+                    // 模拟用户数据库
+                    const mockUsers = {
+                        'admin': { password: 'admin123', fullname: '管理员', avatar: 'https://picsum.photos/id/1/40/40' },
+                        'user1': { password: 'user123', fullname: '周光泽', avatar: 'https://picsum.photos/id/91/40/40' },
+                        'test': { password: 'test123', fullname: '测试用户', avatar: 'https://picsum.photos/id/64/40/40' }
+                    };
+                    
+                    // 模拟网络延迟
+                    setTimeout(function() {
+                        try {
+                            // 模拟登录验证
+                            const user = mockUsers[username];
+                            
+                            if (user && user.password === password) {
+                                // 登录成功
+                                handleLoginSuccess(username, password, rememberMe, user);
+                            } else {
+                                // 登录失败
+                                alert('用户名或密码错误，请重新输入');
+                                loginButton.disabled = false;
+                                loginButton.innerHTML = '<span>登录</span><i class="fa fa-arrow-right"></i>';
+                            }
+                        } catch (error) {
+                            console.error('登录过程发生错误:', error);
+                            alert('登录过程发生错误，请刷新页面重试');
+                            loginButton.disabled = false;
+                            loginButton.innerHTML = '<span>登录</span><i class="fa fa-arrow-right"></i>';
+                        }
+                    }, 1500);
+                });
+            }
+            
+            // 添加输入框动画效果
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    if (this.parentElement) {
+                        this.parentElement.classList.add('ring-2', 'ring-primary/20', 'rounded-lg');
+                    }
+                });
+                
+                input.addEventListener('blur', function() {
+                    if (this.parentElement) {
+                        this.parentElement.classList.remove('ring-2', 'ring-primary/20', 'rounded-lg');
+                    }
+                });
             });
             
-            input.addEventListener('blur', function() {
-                this.parentElement.classList.remove('ring-2', 'ring-primary/20', 'rounded-lg');
-            });
-        });
-        
-        // 第三方登录按钮动画
-        const thirdPartyButtons = document.querySelectorAll('a[href="#"]');
-        thirdPartyButtons.forEach(button => {
-            button.addEventListener('mouseover', function() {
-                this.classList.add('scale-110');
-            });
-            
-            button.addEventListener('mouseout', function() {
-                this.classList.remove('scale-110');
+            // 第三方登录按钮动画
+            const thirdPartyButtons = document.querySelectorAll('.rounded-full');
+            thirdPartyButtons.forEach(button => {
+                button.addEventListener('mouseover', function() {
+                    this.classList.add('scale-110');
+                });
+                
+                button.addEventListener('mouseout', function() {
+                    this.classList.remove('scale-110');
+                });
             });
         });
     </script>

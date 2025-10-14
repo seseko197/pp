@@ -6,6 +6,7 @@
     <title>抑郁症分析系统 - 首页</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="sync_user_profile.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -672,12 +673,102 @@
             }
         });
         
+        // 从localStorage获取登录用户信息
+    function getLoggedInUser() {
+        try {
+            // 优先使用userCredentials键
+            const credentials = localStorage.getItem('userCredentials');
+            if (credentials) {
+                return JSON.parse(credentials);
+            }
+            // 兼容旧版逻辑
+            if (localStorage.getItem('userLoggedIn') === 'true') {
+                const currentUser = localStorage.getItem('currentUser');
+                return currentUser ? JSON.parse(currentUser) : null;
+            }
+            return null;
+        } catch (error) {
+            console.error('获取用户信息失败:', error);
+            return null;
+        }
+    }
+    
+    // 检查用户是否已登录并更新导航栏
+    function updateNavbarBasedOnLoginStatus() {
+        const user = getLoggedInUser();
+        
+        // 更新导航栏的登录按钮
+        const desktopLoginButton = document.querySelector('.hidden.md\:flex a[href="login.html"]');
+        const mobileLoginButton = document.querySelector('#mobile-menu a[href="login.html"]');
+        const startAnalysisButton = document.querySelector('a:has(.fa-rocket)');
+        
+        if (user) {
+            console.log('用户已登录，更新导航栏显示');
+            
+            // 更新桌面端导航栏
+            if (desktopLoginButton) {
+                desktopLoginButton.innerHTML = '<i class="fa fa-sign-out mr-1"></i> 退出';
+                desktopLoginButton.href = 'login.html';
+                desktopLoginButton.onclick = function(e) {
+                    e.preventDefault();
+                    // 清除所有登录相关的localStorage数据
+                    localStorage.removeItem('userCredentials');
+                    localStorage.removeItem('userLoggedIn');
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('savedCredentials');
+                    
+                    // 显示退出成功提示
+                    alert('退出成功');
+                    
+                    // 刷新页面，确保所有状态都已清除
+                    window.location.reload();
+                };
+            }
+            
+            // 更新移动端导航栏
+            if (mobileLoginButton) {
+                mobileLoginButton.innerHTML = '<i class="fa fa-sign-out mr-1"></i> 退出';
+                mobileLoginButton.href = 'login.html';
+                mobileLoginButton.onclick = function(e) {
+                    e.preventDefault();
+                    // 清除所有登录相关的localStorage数据
+                    localStorage.removeItem('userCredentials');
+                    localStorage.removeItem('userLoggedIn');
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('savedCredentials');
+                    
+                    // 显示退出成功提示
+                    alert('退出成功');
+                    
+                    // 刷新页面，确保所有状态都已清除
+                    window.location.reload();
+                };
+            }
+            
+            // 更新开始分析之旅按钮
+            if (startAnalysisButton) {
+                startAnalysisButton.href = 'analysis.html';
+            }
+            
+        } else {
+            console.log('用户未登录，保持默认导航栏显示');
+            
+            // 确保按钮链接到登录页面
+            if (startAnalysisButton) {
+                startAnalysisButton.href = 'login.html';
+            }
+        }
+    }
+        
         // 初始化导航栏状态
         if (window.scrollY > 10) {
             navbar.classList.add('bg-white/90', 'bg-blur', 'shadow-md');
         } else {
             navbar.classList.add('bg-transparent');
         }
+        
+        // 页面加载时更新导航栏
+        updateNavbarBasedOnLoginStatus();
         
         // 平滑滚动
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {

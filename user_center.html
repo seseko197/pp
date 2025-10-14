@@ -7,6 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- 引入本地数据库模块 -->
+    <script src="localdb.js"></script>
+    <script src="sync_user_profile.js"></script>
+    <script src="ultimate_sync_fix.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -61,7 +65,7 @@
                 <div class="flex items-center space-x-2">
                     <!-- 导航栏头像 - 需要同步更新 -->
                     <img id="nav-avatar-desktop" src="https://picsum.photos/id/91/40/40" alt="用户头像" class="w-10 h-10 rounded-full object-cover border-2 border-primary">
-                    <span class="text-gray-700 font-medium">周光泽</span>
+                    <span id="nav-username-desktop" class="text-gray-700 font-medium">周光泽</span>
                 </div>
                 <a href="login.html" class="text-gray-600 hover:text-danger transition-colors">
                     <i class="fa fa-sign-out"></i> 退出
@@ -74,17 +78,17 @@
             </div>
         </div>
         <div id="mobile-menu" class="hidden md:hidden bg-white px-4 py-2 shadow-lg">
-            <a href="index.html" class="block py-2 text-gray-600 hover:text-primary">首页</a>
-            <a href="analysis.html" class="block py-2 text-primary font-medium">分析中心</a>
-            <div class="py-2 flex items-center space-x-2 border-t border-gray-100">
-                <!-- 移动端导航栏头像 - 需要同步更新 -->
-                <img id="nav-avatar-mobile" src="https://picsum.photos/id/91/40/40" alt="用户头像" class="w-8 h-8 rounded-full object-cover border-2 border-primary">
-                <span class="text-gray-700 font-medium">周光泽</span>
+                <a href="index.html" class="block py-2 text-gray-600 hover:text-primary">首页</a>
+                <a href="analysis.html" class="block py-2 text-primary font-medium">分析中心</a>
+                <div class="py-2 flex items-center space-x-2 border-t border-gray-100">
+                    <!-- 移动端导航栏头像 - 需要同步更新 -->
+                    <img id="nav-avatar-mobile" src="https://picsum.photos/id/91/40/40" alt="用户头像" class="w-8 h-8 rounded-full object-cover border-2 border-primary">
+                    <span id="nav-username-mobile" class="text-gray-700 font-medium">周光泽</span>
+                </div>
+                <a href="login.html" class="block py-2 text-danger font-medium border-t border-gray-100">
+                    <i class="fa fa-sign-out mr-2"></i> 退出
+                </a>
             </div>
-            <a href="login.html" class="block py-2 text-danger font-medium border-t border-gray-100">
-                <i class="fa fa-sign-out mr-2"></i> 退出
-            </a>
-        </div>
     </nav>
 
     <!-- 主要内容 -->
@@ -358,6 +362,9 @@
                                 class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
                             <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         </div>
+                        <button id="refresh-history-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md transition-colors flex items-center">
+                            <i class="fa fa-refresh mr-2"></i> 刷新记录
+                        </button>
                         <button id="batch-delete-btn" class="bg-danger hover:bg-danger/90 text-white px-4 py-2 rounded-md transition-colors flex items-center hidden">
                             <i class="fa fa-trash mr-2"></i> 批量删除
                         </button>
@@ -754,7 +761,7 @@
         // 关闭编辑模态框的函数
         function closeModal() {
             editProfileModal.classList.add('hidden');
-            document.body.style.overflow = 'auto'; // 恢复背景滚动
+            document.body.style.overflow = ''; // 完全清除样式，恢复默认滚动行为
         }
         
         // 关闭模态框事件
@@ -806,7 +813,7 @@
         });
         
         // 保存个人资料
-        saveProfileBtn.addEventListener('click', () => {
+        saveProfileBtn.addEventListener('click', async () => {
             // 获取表单数据
             const fullname = document.getElementById('fullname').value;
             const email = document.getElementById('email').value;
@@ -832,14 +839,63 @@
             userName.textContent = fullname;
             userEmail.textContent = email;
             
-            // 模拟保存到服务器的过程
-            // 在实际应用中，这里应该发送AJAX请求到服务器保存数据
-            setTimeout(() => {
+            try {
+                // 获取当前头像URL
+                const avatarUrl = userAvatar.src;
+                
+                // 创建用户资料对象
+                const userProfile = {
+                    fullname,
+                    email,
+                    gender,
+                    age,
+                    occupation,
+                    bio,
+                    interests,
+                    concerns,
+                    avatar: avatarUrl,
+                    registerDate: document.querySelector('p.text-gray-500.mb-2').textContent.replace('注册时间：', '')
+                };
+                
+                // 使用IndexedDB保存用户资料
+                await localDB.saveUserProfile(userProfile);
+                
+                // 触发全局同步更新 - 优先使用终极同步系统
+                if (window.ultimateSyncSystem) {
+                    window.ultimateSyncSystem.triggerGlobalSync(userProfile);
+                    console.log('✅ 使用终极同步系统触发全局更新');
+                } else if (window.userProfileSync) {
+                    window.userProfileSync.triggerGlobalUpdate(userProfile);
+                    console.log('✅ 使用备用同步系统触发全局更新');
+                } else {
+                    // 备用方案：直接使用localStorage
+                    localStorage.setItem('userProfileData', JSON.stringify(userProfile));
+                    localStorage.setItem('userProfileUpdated', Date.now().toString());
+                    localStorage.setItem('userProfileLastUpdate', Date.now().toString());
+                    console.log('✅ 使用localStorage触发全局更新');
+                    
+                    // 短暂延迟后清除事件标记
+                    setTimeout(() => {
+                        localStorage.removeItem('userProfileUpdated');
+                    }, 100);
+                }
+                
                 // 显示保存成功的动画效果
                 const saveSuccess = document.createElement('div');
                 saveSuccess.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0 opacity-100';
                 saveSuccess.innerHTML = '<i class="fa fa-check-circle mr-2"></i>个人资料保存成功！';
                 document.body.appendChild(saveSuccess);
+                
+                // 先关闭模态框
+                closeModal();
+                
+                // 在保存成功后添加页面跳转
+                setTimeout(() => {
+                    // 跳转到分析中心
+                    window.location.href = 'analysis.html';
+                    // 或者使用以下方式刷新用户中心自身
+                    // window.location.reload();
+                }, 2000);
                 
                 // 3秒后移除成功提示
                 setTimeout(() => {
@@ -848,52 +904,13 @@
                         document.body.removeChild(saveSuccess);
                     }, 300);
                 }, 3000);
-                
-                // 关闭模态框
-                closeModal();
-            }, 800);
+            } catch (error) {
+                console.error('保存个人资料失败:', error);
+                alert('保存个人资料失败，请重试');
+            }
         });
         
-        // 删除按钮点击事件
-        const deleteButtons = document.querySelectorAll('.delete-btn');
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (confirm('确定要删除这条记录吗？')) {
-                    const row = this.closest('tr');
-                    row.style.opacity = '0';
-                    setTimeout(() => {
-                        row.remove();
-                        
-                        // 重新计算并更新分页信息
-                        const remainingRecords = document.querySelectorAll('table tbody tr').length;
-                        const totalPages = Math.ceil(remainingRecords / recordsPerPage);
-                        
-                        // 如果当前页没有记录了，回退到上一页
-                        if (remainingRecords > 0 && document.querySelectorAll('table tbody tr:not(.hidden)').length === 0) {
-                            goToPage(Math.max(1, currentPage - 1));
-                        } else {
-                            updatePaginationInfo();
-                        }
-                        
-                        // 显示删除成功的动画效果
-                        const deleteSuccess = document.createElement('div');
-                        deleteSuccess.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0 opacity-100';
-                        deleteSuccess.innerHTML = '<i class="fa fa-check-circle mr-2"></i>记录删除成功！';
-                        document.body.appendChild(deleteSuccess);
-                        
-                        // 3秒后移除成功提示
-                        setTimeout(() => {
-                            deleteSuccess.style.opacity = '0';
-                            deleteSuccess.style.transform = 'translateY(10px)';
-                            setTimeout(() => {
-                                deleteSuccess.remove();
-                            }, 300);
-                        }, 3000);
-                    }, 300);
-                }
-            });
-        });
+
 
         // 批量删除功能
         const selectAllCheckbox = document.getElementById('select-all');
@@ -935,7 +952,7 @@
         }
 
         // 批量删除按钮点击事件
-        batchDeleteBtn.addEventListener('click', function() {
+        batchDeleteBtn.addEventListener('click', async function() {
             const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
             if (checkedBoxes.length === 0) {
                 alert('请选择要删除的记录');
@@ -943,48 +960,64 @@
             }
 
             if (confirm(`确定要删除选中的 ${checkedBoxes.length} 条记录吗？`)) {
-                // 收集选中的行
-                const rowsToDelete = Array.from(checkedBoxes).map(checkbox => checkbox.closest('tr'));
-                
-                // 为每条记录添加删除动画
-                rowsToDelete.forEach((row, index) => {
-                    row.style.opacity = '0';
-                    setTimeout(() => {
-                        row.remove();
-                        
-                        // 最后一条记录删除后显示提示
-                        if (index === rowsToDelete.length - 1) {
-                            // 显示删除成功的动画效果
-                            const deleteSuccess = document.createElement('div');
-                            deleteSuccess.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0 opacity-100';
-                            deleteSuccess.innerHTML = `<i class="fa fa-check-circle mr-2"></i>成功删除 ${rowsToDelete.length} 条记录！`;
-                            document.body.appendChild(deleteSuccess);
+                try {
+                    // 收集选中的记录ID和对应的DOM行
+                    const recordsToDelete = Array.from(checkedBoxes).map(checkbox => {
+                        const row = checkbox.closest('tr');
+                        return {
+                            id: parseInt(row.dataset.recordId),
+                            row: row
+                        };
+                    });
+                    
+                    // 从数据库中批量删除记录
+                    const deletedCount = await localDB.batchDeleteAnalysisRecords(
+                        recordsToDelete.map(record => record.id)
+                    );
+                    
+                    // 为每条记录添加删除动画
+                    recordsToDelete.forEach((record, index) => {
+                        record.row.style.opacity = '0';
+                        setTimeout(() => {
+                            record.row.remove();
                             
-                            // 3秒后移除成功提示
-                            setTimeout(() => {
-                                deleteSuccess.classList.add('translate-y-10', 'opacity-0');
+                            // 最后一条记录删除后显示提示
+                            if (index === recordsToDelete.length - 1) {
+                                // 显示删除成功的动画效果
+                                const deleteSuccess = document.createElement('div');
+                                deleteSuccess.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0 opacity-100';
+                                deleteSuccess.innerHTML = `<i class="fa fa-check-circle mr-2"></i>成功删除 ${deletedCount} 条记录！`;
+                                document.body.appendChild(deleteSuccess);
+                                
+                                // 3秒后移除成功提示
                                 setTimeout(() => {
-                                    document.body.removeChild(deleteSuccess);
-                                }, 300);
-                            }, 3000);
-                            
-                            // 更新状态
-                             selectAllCheckbox.checked = false;
-                             batchDeleteBtn.classList.add('hidden');
-                              
-                            // 重新计算并更新分页信息
-                            const remainingRecords = document.querySelectorAll('table tbody tr').length;
-                            const totalPages = Math.ceil(remainingRecords / recordsPerPage);
-                            
-                            // 如果当前页没有记录了，回退到上一页
-                            if (remainingRecords > 0 && document.querySelectorAll('table tbody tr:not(.hidden)').length === 0) {
-                                goToPage(Math.max(1, currentPage - 1));
-                            } else {
-                                updatePaginationInfo();
-                            }
-                         }
-                    }, index * 100); // 为了动画效果，每条记录删除有延迟
-                });
+                                    deleteSuccess.classList.add('translate-y-10', 'opacity-0');
+                                    setTimeout(() => {
+                                        document.body.removeChild(deleteSuccess);
+                                    }, 300);
+                                }, 3000);
+                                
+                                // 更新状态
+                                selectAllCheckbox.checked = false;
+                                batchDeleteBtn.classList.add('hidden');
+                                  
+                                // 重新计算并更新分页信息
+                                const remainingRecords = document.querySelectorAll('table tbody tr').length;
+                                const totalPages = Math.ceil(remainingRecords / recordsPerPage);
+                                
+                                // 如果当前页没有记录了，回退到上一页
+                                if (remainingRecords > 0 && document.querySelectorAll('table tbody tr:not(.hidden)').length === 0) {
+                                    goToPage(Math.max(1, currentPage - 1));
+                                } else {
+                                    updatePaginationInfo();
+                                }
+                             }
+                        }, index * 100); // 为了动画效果，每条记录删除有延迟
+                    });
+                } catch (error) {
+                    console.error('批量删除记录失败:', error);
+                    alert('批量删除记录失败，请重试');
+                }
             }
         });
         
@@ -1123,18 +1156,42 @@
         // 全局变量控制是否显示全部记录
         let showAllRecords = false;
         
-        // 从localStorage同步分析结果到历史记录表格
-        function syncAnalysisHistory() {
+        // 从IndexedDB同步分析结果到历史记录表格
+        async function syncAnalysisHistory() {
             try {
-                // 从localStorage获取分析历史
-                let historyRecords = JSON.parse(localStorage.getItem('historyRecords')) || [];
+                // 确保数据库已初始化
+                await localDB.waitForInit();
                 
-                console.log(`从localStorage读取到的记录数量: ${historyRecords.length}`);
+                // 从IndexedDB获取分析历史
+                let historyRecords = await localDB.getAllAnalysisHistory();
                 
-                // 如果没有历史记录，创建一个示例记录以便测试
+                console.log(`从IndexedDB读取到的记录数量: ${historyRecords.length}`);
+                
+                // 如果没有历史记录，创建一些示例记录以便测试
                 if (historyRecords.length === 0) {
-                    console.log('localStorage中没有分析历史记录');
-                    return;
+                    console.log('数据库中没有分析历史记录，创建示例数据');
+                    
+                    // 创建10条示例记录
+                    const mockRecords = [
+                        { date: '2023-08-01', model: '随机森林', healthIndex: 85, timestamp: Date.now() - 86400000 * 0 },
+                        { date: '2023-07-31', model: 'SVM模型', healthIndex: 82, timestamp: Date.now() - 86400000 * 1 },
+                        { date: '2023-07-30', model: '神经网络', healthIndex: 79, timestamp: Date.now() - 86400000 * 2 },
+                        { date: '2023-07-29', model: '决策树', healthIndex: 76, timestamp: Date.now() - 86400000 * 3 },
+                        { date: '2023-07-28', model: '随机森林', healthIndex: 84, timestamp: Date.now() - 86400000 * 4 },
+                        { date: '2023-07-27', model: 'SVM模型', healthIndex: 80, timestamp: Date.now() - 86400000 * 5 },
+                        { date: '2023-07-26', model: '神经网络', healthIndex: 77, timestamp: Date.now() - 86400000 * 6 },
+                        { date: '2023-07-25', model: '决策树', healthIndex: 75, timestamp: Date.now() - 86400000 * 7 },
+                        { date: '2023-07-24', model: '随机森林', healthIndex: 78, timestamp: Date.now() - 86400000 * 8 },
+                        { date: '2023-07-23', model: 'SVM模型', healthIndex: 76, timestamp: Date.now() - 86400000 * 9 }
+                    ];
+                    
+                    // 保存示例记录到数据库
+                    for (const record of mockRecords) {
+                        await localDB.addAnalysisRecord(record);
+                    }
+                    
+                    // 重新获取记录
+                    historyRecords = await localDB.getAllAnalysisHistory();
                 }
                 
                 // 使用具体的选择器确保找到正确的表格
@@ -1146,145 +1203,163 @@
                 
                 console.log('成功找到历史记录表格');
                 
-                // 获取所有已有的记录ID
-                const existingIds = new Set();
-                document.querySelectorAll('#history-table tbody tr').forEach(row => {
-                    const checkbox = row.querySelector('input.record-checkbox');
-                    if (checkbox && checkbox.dataset.id) {
-                        existingIds.add(checkbox.dataset.id);
-                    }
-                });
+                // 清空表格中的现有记录（除了表头）
+                while (tableBody.firstChild) {
+                    tableBody.removeChild(tableBody.firstChild);
+                }
                 
-                console.log(`表格中已存在的记录ID数量: ${existingIds.size}`);
+                console.log('开始处理历史记录，准备添加记录到表格');
                 
-                // 添加新的记录
+                // 添加所有记录到表格
                 let addedCount = 0;
                 
-                console.log('开始处理历史记录，准备添加新记录到表格');
-                
                 historyRecords.forEach((record) => {
-                    // 生成唯一ID
-                    const recordId = `record-${record.timestamp}`;
+                    console.log(`添加记录: ${record.date} ${record.model} 健康指数:${record.healthIndex}`);
                     
-                    // 只添加不存在的记录
-                        if (!existingIds.has(recordId)) {
-                            console.log(`添加新记录: ${record.date} ${record.model} 健康指数:${record.healthIndex}`);
-                            
-                            const row = document.createElement('tr');
-                            row.className = 'table-row-hover transition-colors';
-                            
-                            // 计算记录的健康状态标签
-                            let statusClass = 'bg-yellow-100 text-yellow-800';
-                            let statusText = '一般';
-                            if (record.healthIndex >= 80) {
-                                statusClass = 'bg-green-100 text-green-800';
-                                statusText = '良好';
-                            } else if (record.healthIndex < 60) {
-                                statusClass = 'bg-red-100 text-red-800';
-                                statusText = '较差';
-                            }
-                            
-                            // 设置行内容
-                            row.innerHTML = `
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="${recordId}">
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${record.date}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.model}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.healthIndex}</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${statusText}</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
-                                    <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
-                                </td>
-                            `;
-                            
-                            // 添加到表格顶部
-                            tableBody.insertBefore(row, tableBody.firstChild);
-                            addedCount++;
-                        }
+                    const row = document.createElement('tr');
+                    row.className = 'table-row-hover transition-colors';
+                    // 存储记录的真实ID用于后续操作
+                    row.dataset.recordId = record.id;
+                    
+                    // 计算记录的健康状态标签
+                    let statusClass = 'bg-yellow-100 text-yellow-800';
+                    let statusText = '一般';
+                    if (record.healthIndex >= 80) {
+                        statusClass = 'bg-green-100 text-green-800';
+                        statusText = '良好';
+                    } else if (record.healthIndex < 60) {
+                        statusClass = 'bg-red-100 text-red-800';
+                        statusText = '较差';
+                    }
+                    
+                    // 设置行内容
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <input type="checkbox" class="record-checkbox rounded text-primary focus:ring-primary" data-id="${record.id}">
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${record.date}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.model}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.healthIndex}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${statusText}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <a href="#" class="text-primary hover:text-primary/80 mr-4">查看详情</a>
+                            <a href="#" class="text-gray-500 hover:text-gray-700 delete-btn">删除</a>
+                        </td>
+                    `;
+                    
+                    // 将行添加到表格中
+                    tableBody.appendChild(row);
+                    addedCount++;
+                    console.log(`已添加记录 ${addedCount} 到表格`);
                 });
                 
-                // 如果添加了新记录，重新绑定事件监听器
+                console.log(`成功添加 ${addedCount} 条记录到表格`);
+                
+                // 重新绑定事件监听器
+                bindTableEvents();
+                
+                // 如果添加了记录，更新分页信息
                 if (addedCount > 0) {
-                    // 重新绑定删除按钮事件
-                    const deleteButtons = document.querySelectorAll('.delete-btn');
-                    deleteButtons.forEach(button => {
-                        button.onclick = function(e) {
-                            e.preventDefault();
-                            if (confirm('确定要删除这条记录吗？')) {
-                                const row = this.closest('tr');
-                                row.style.opacity = '0';
-                                setTimeout(() => {
-                                    row.remove();
-                                    
-                                    // 重新计算并更新分页信息
-                                    const remainingRecords = document.querySelectorAll('table tbody tr').length;
-                                    const totalPages = Math.ceil(remainingRecords / recordsPerPage);
-                                    
-                                    // 如果当前页没有记录了，回退到上一页
-                                    if (remainingRecords > 0 && document.querySelectorAll('table tbody tr:not(.hidden)').length === 0) {
-                                        goToPage(Math.max(1, currentPage - 1));
-                                    } else {
-                                        updatePaginationInfo();
-                                    }
-                                    
-                                    // 显示删除成功的动画效果
-                                    const deleteSuccess = document.createElement('div');
-                                    deleteSuccess.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0 opacity-100';
-                                    deleteSuccess.innerHTML = '<i class="fa fa-check-circle mr-2"></i>记录删除成功！';
-                                    document.body.appendChild(deleteSuccess);
-                                    
-                                    // 3秒后移除成功提示
-                                    setTimeout(() => {
-                                        deleteSuccess.style.opacity = '0';
-                                        deleteSuccess.style.transform = 'translateY(10px)';
-                                        setTimeout(() => {
-                                            deleteSuccess.remove();
-                                        }, 300);
-                                    }, 3000);
-                                }, 300);
-                            }
-                        };
-                    });
-                    
-                    // 重新绑定查看详情按钮事件
-                    const viewButtons = document.querySelectorAll('a[href="#"]');
-                    viewButtons.forEach(button => {
-                        if (button.textContent.includes('查看详情')) {
-                            button.onclick = function(e) {
-                                e.preventDefault();
-                                alert('查看分析详情');
-                            };
-                        }
-                    });
-                    
-                    // 重新绑定表格行悬停效果
-                    const tableRows = document.querySelectorAll('tbody tr');
-                    tableRows.forEach(row => {
-                        row.onmouseenter = function() {
-                            this.classList.add('table-row-hover');
-                        };
-                        
-                        row.onmouseleave = function() {
-                            this.classList.remove('table-row-hover');
-                        };
-                    });
-                    
-                    // 更新记录复选框相关逻辑
-                    const recordCheckboxes = document.querySelectorAll('.record-checkbox');
-                    recordCheckboxes.forEach(checkbox => {
-                        checkbox.onchange = function() {
-                            updateSelectAllStatus();
-                            updateBatchDeleteButtonVisibility();
-                        };
-                    });
+                    updatePaginationInfo();
+                    // 确保回到第一页
+                    goToPage(1);
                 }
             } catch (error) {
                 console.error('同步分析历史时出错:', error);
             }
+        }
+        
+        // 绑定表格相关事件
+        function bindTableEvents() {
+            // 绑定删除按钮事件
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            deleteButtons.forEach(button => {
+                button.onclick = async function(e) {
+                    e.preventDefault();
+                    if (confirm('确定要删除这条记录吗？')) {
+                        const row = this.closest('tr');
+                        // 获取记录ID
+                        const recordId = parseInt(row.dataset.recordId);
+                        
+                        try {
+                            // 从数据库中删除记录
+                            await localDB.deleteAnalysisRecord(recordId);
+                            
+                            // 从DOM中移除行
+                            row.style.opacity = '0';
+                            setTimeout(() => {
+                                row.remove();
+                                
+                                // 重新计算并更新分页信息
+                                const remainingRecords = document.querySelectorAll('table tbody tr').length;
+                                const totalPages = Math.ceil(remainingRecords / recordsPerPage);
+                                
+                                // 如果当前页没有记录了，回退到上一页
+                                if (remainingRecords > 0 && document.querySelectorAll('table tbody tr:not(.hidden)').length === 0) {
+                                    goToPage(Math.max(1, currentPage - 1));
+                                } else {
+                                    updatePaginationInfo();
+                                }
+                                
+                                // 显示删除成功的动画效果
+                                const deleteSuccess = document.createElement('div');
+                                deleteSuccess.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-y-0 opacity-100';
+                                deleteSuccess.innerHTML = '<i class="fa fa-check-circle mr-2"></i>记录删除成功！';
+                                document.body.appendChild(deleteSuccess);
+                                
+                                // 3秒后移除成功提示
+                                setTimeout(() => {
+                                    deleteSuccess.style.opacity = '0';
+                                    deleteSuccess.style.transform = 'translateY(10px)';
+                                    setTimeout(() => {
+                                        deleteSuccess.remove();
+                                    }, 300);
+                                }, 3000);
+                            }, 300);
+                        } catch (error) {
+                            console.error('删除记录失败:', error);
+                            alert('删除记录失败，请重试');
+                        }
+                    }
+                };
+            });
+            
+            // 绑定查看详情按钮事件
+            const viewButtons = document.querySelectorAll('a[href="#"]');
+            viewButtons.forEach(button => {
+                if (button.textContent.includes('查看详情')) {
+                    button.onclick = function(e) {
+                        e.preventDefault();
+                        const row = this.closest('tr');
+                        const recordId = row.dataset.recordId;
+                        console.log('查看记录详情:', recordId);
+                        alert('查看分析详情');
+                    };
+                }
+            });
+            
+            // 绑定表格行悬停效果
+            const tableRows = document.querySelectorAll('tbody tr');
+            tableRows.forEach(row => {
+                row.onmouseenter = function() {
+                    this.classList.add('table-row-hover');
+                };
+                
+                row.onmouseleave = function() {
+                    this.classList.remove('table-row-hover');
+                };
+            });
+            
+            // 更新记录复选框相关逻辑
+            const recordCheckboxes = document.querySelectorAll('.record-checkbox');
+            recordCheckboxes.forEach(checkbox => {
+                checkbox.onchange = function() {
+                    updateSelectAllStatus();
+                    updateBatchDeleteButtonVisibility();
+                };
+            });
         }
         
         // 跳转到指定页码
@@ -1404,9 +1479,121 @@
         }
 
         // 初始化时更新分页信息
-        document.addEventListener('DOMContentLoaded', function() {
-            // 从localStorage同步分析结果到历史记录
-            syncAnalysisHistory();
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 从IndexedDB同步分析结果到历史记录
+            syncAnalysisHistory().catch(error => console.error('同步分析历史时出错:', error));
+            
+            // 添加刷新按钮事件监听器
+            const refreshBtn = document.getElementById('refresh-history-btn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', async function() {
+                    // 显示加载状态
+                    this.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> 刷新中...';
+                    this.disabled = true;
+                    
+                    try {
+                        // 重新同步分析历史
+                        await syncAnalysisHistory();
+                        
+                        // 显示刷新成功提示
+                        const successMsg = document.createElement('div');
+                        successMsg.className = 'fixed bottom-4 right-4 bg-success text-white px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300';
+                        successMsg.innerHTML = '<i class="fa fa-check-circle mr-2"></i> 历史记录已刷新！';
+                        document.body.appendChild(successMsg);
+                        
+                        // 3秒后移除成功提示
+                        setTimeout(() => {
+                            successMsg.style.opacity = '0';
+                            successMsg.style.transform = 'translateY(10px)';
+                            setTimeout(() => successMsg.remove(), 300);
+                        }, 3000);
+                    } catch (error) {
+                        console.error('刷新历史记录失败:', error);
+                        alert('刷新失败，请重试');
+                    } finally {
+                        // 恢复按钮状态
+                        this.innerHTML = '<i class="fa fa-refresh mr-2"></i> 刷新记录';
+                        this.disabled = false;
+                    }
+                });
+            }
+            
+            // 加载用户资料
+            try {
+                const userProfile = await localDB.getUserProfile();
+                
+                if (userProfile) {
+                    // 更新页面显示的用户信息
+                    document.getElementById('fullname').value = userProfile.fullname || '周光泽';
+                    document.getElementById('email').value = userProfile.email || '2036453418@qq.com';
+                    document.getElementById('gender').value = userProfile.gender || 'male';
+                    document.getElementById('age').value = userProfile.age || 28;
+                    document.getElementById('occupation').value = userProfile.occupation || '软件工程师';
+                    document.getElementById('bio').value = userProfile.bio || '关注心理健康，热爱生活和技术。';
+                    document.getElementById('interests').value = userProfile.interests || '阅读, 运动, 编程, 音乐';
+                    
+                    // 更新关注点复选框
+                    if (userProfile.concerns && Array.isArray(userProfile.concerns)) {
+                        document.querySelectorAll('input[name="concerns"]').forEach(checkbox => {
+                            checkbox.checked = userProfile.concerns.includes(checkbox.value);
+                        });
+                    }
+                    
+                    // 更新头像
+                    if (userProfile.avatar) {
+                        const avatarElements = [
+                            document.getElementById('user-avatar'),
+                            document.getElementById('preview-avatar'),
+                            document.getElementById('nav-avatar-desktop'),
+                            document.getElementById('nav-avatar-mobile')
+                        ];
+                        
+                        avatarElements.forEach(element => {
+                            if (element) element.src = userProfile.avatar;
+                        });
+                    }
+                    
+                    // 更新页面显示的名称和邮箱
+                    document.getElementById('user-name').textContent = userProfile.fullname || '周光泽';
+                    document.getElementById('user-email').textContent = userProfile.email || '2036453418@qq.com';
+                    
+                    // 更新导航栏显示的用户名
+                    if (document.getElementById('nav-username-desktop')) {
+                        document.getElementById('nav-username-desktop').textContent = userProfile.fullname || '周光泽';
+                    }
+                    if (document.getElementById('nav-username-mobile')) {
+                        document.getElementById('nav-username-mobile').textContent = userProfile.fullname || '周光泽';
+                    }
+                    
+                    // 更新注册时间显示
+                    const registerTimeElement = document.querySelector('p.text-gray-500.mb-2');
+                    if (registerTimeElement) {
+                        registerTimeElement.textContent = `注册时间：${userProfile.registerDate || new Date().toLocaleDateString('zh-CN')}`;
+                    }
+                } else {
+                    // 如果没有用户资料，设置默认注册时间
+                    const now = new Date();
+                    const formattedDate = now.toLocaleDateString('zh-CN');
+                    
+                    // 更新注册时间显示
+                    const registerTimeElement = document.querySelector('p.text-gray-500.mb-2');
+                    if (registerTimeElement) {
+                        registerTimeElement.textContent = `注册时间：${formattedDate}`;
+                    }
+                }
+            } catch (error) {
+                console.error('加载用户资料失败:', error);
+                
+                // 设置默认注册时间
+                const now = new Date();
+                const formattedDate = now.toLocaleDateString('zh-CN');
+                
+                // 更新注册时间显示
+                const registerTimeElement = document.querySelector('p.text-gray-500.mb-2');
+                if (registerTimeElement) {
+                    registerTimeElement.textContent = `注册时间：${formattedDate}`;
+                }
+            }
             
             // 重置当前页为1
             currentPage = 1;
@@ -1417,19 +1604,6 @@
             
             // 更新分页信息
             updatePaginationInfo();
-            
-            // 设置注册时间为当前时间
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const formattedDate = `${year}-${month}-${day}`;
-            
-            // 更新注册时间显示
-            const registerTimeElement = document.querySelector('p.text-gray-500.mb-2');
-            if (registerTimeElement) {
-                registerTimeElement.textContent = `注册时间：${formattedDate}`;
-            }
             
             // 显示全部按钮事件处理
             document.getElementById('show-all-btn').addEventListener('click', function() {
@@ -1507,24 +1681,272 @@
     </script>
 <!-- 同步修复工具支持脚本 -->
     <script>
-        // 检查是否有来自同步修复工具的请求
         document.addEventListener('DOMContentLoaded', function() {
-            try {
-                // 检查sessionStorage中是否有同步脚本
-                const syncScript = sessionStorage.getItem('syncScript');
-                
-                if (syncScript) {
-                    console.log('=== 检测到同步修复工具请求 ===');
-                    console.log('正在执行同步逻辑...');
+            console.log('=== 用户中心页面加载完成，开始初始化同步系统 ===');
+            
+            // 初始化终极同步修复工具
+            async function initializeSyncSystem() {
+                try {
+                    // 首先初始化localDB
+                    if (window.localDB && typeof window.localDB.waitForInit === 'function') {
+                        console.log('等待localDB初始化...');
+                        await window.localDB.waitForInit();
+                        console.log('localDB初始化完成');
+                    }
                     
-                    // 执行同步脚本
-                    eval(syncScript);
-                    
-                    // 清除sessionStorage中的脚本，避免重复执行
-                    sessionStorage.removeItem('syncScript');
+                    // 初始化终极同步修复工具
+                    if (window.ultimateSyncFix && typeof window.ultimateSyncFix.init === 'function') {
+                        console.log('使用已加载的终极同步修复工具');
+                        window.ultimateSyncFix.init();
+                        console.log('终极同步修复工具已初始化');
+                    } else {
+                        console.log('正在尝试动态加载ultimate_sync_fix.js脚本...');
+                        // 动态加载同步修复工具脚本
+                        await loadSyncFixScript();
+                    }
+                } catch (error) {
+                    console.error('初始化同步系统时发生错误:', error);
+                    // 即使出错也继续执行，因为可能有备用方案
                 }
-            } catch (error) {
-                console.error('执行同步修复脚本时发生错误:', error);
+                
+                // 检查并执行同步脚本
+                await checkAndExecuteSyncScript();
+            }
+            
+            // 动态加载同步修复脚本
+            function loadSyncFixScript() {
+                return new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'ultimate_sync_fix.js';
+                    script.onload = function() {
+                        console.log('ultimate_sync_fix.js脚本加载成功');
+                        if (window.ultimateSyncFix && typeof window.ultimateSyncFix.init === 'function') {
+                            window.ultimateSyncFix.init();
+                        }
+                        resolve();
+                    };
+                    script.onerror = function(error) {
+                        console.error('加载ultimate_sync_fix.js脚本失败，将使用备用同步逻辑');
+                        resolve(); // 即使加载失败也解析Promise，继续执行
+                    };
+                    document.head.appendChild(script);
+                });
+            }
+            
+            // 检查并执行同步脚本
+            async function checkAndExecuteSyncScript() {
+                try {
+                    // 检查sessionStorage中是否有同步脚本
+                    const syncScript = sessionStorage.getItem('syncScript');
+                    
+                    if (syncScript) {
+                        console.log('=== 检测到跨页面同步脚本 ===');
+                        console.log('脚本长度:', syncScript.length, '字符');
+                        
+                        // 执行同步脚本
+                        try {
+                            eval(syncScript);
+                            console.log('同步脚本执行完成');
+                        } catch (evalError) {
+                            console.error('同步脚本执行失败:', evalError);
+                            
+                            // 备用同步逻辑：如果主同步失败，尝试基础同步
+                            console.log('启动备用同步逻辑...');
+                            await basicSyncLogic();
+                        }
+                        
+                        // 清除sessionStorage中的脚本，避免重复执行
+                        sessionStorage.removeItem('syncScript');
+                        console.log('已清除sessionStorage中的同步脚本');
+                    } else {
+                        console.log('未检测到需要执行的同步脚本');
+                        
+                        // 如果没有同步脚本，执行一次基础同步检查
+                        await basicSyncCheck();
+                    }
+                } catch (error) {
+                    console.error('处理同步脚本时发生错误:', error);
+                }
+            }
+            
+            // 基础同步逻辑 - 当主同步失败时使用
+            async function basicSyncLogic() {
+                try {
+                    console.log('执行基础同步逻辑...');
+                    
+                    // 1. 修复localStorage键名
+                    const oldRecords = localStorage.getItem('historyRecords');
+                    const newRecords = localStorage.getItem('analysisHistory');
+                    
+                    if (oldRecords) {
+                        if (!newRecords) {
+                            localStorage.setItem('analysisHistory', oldRecords);
+                            localStorage.removeItem('historyRecords');
+                            console.log('基础同步：修复了localStorage键名');
+                        } else {
+                            console.log('基础同步：两个键名都存在，跳过修复');
+                        }
+                    }
+                    
+                    // 2. 从localStorage同步到IndexedDB
+                    if (window.localDB && typeof window.localDB.getAllAnalysisHistory === 'function') {
+                        const analysisHistory = localStorage.getItem('analysisHistory');
+                        if (analysisHistory) {
+                            try {
+                                const records = JSON.parse(analysisHistory);
+                                if (Array.isArray(records) && records.length > 0) {
+                                    console.log(`基础同步：发现${records.length}条记录需要同步到IndexedDB`);
+                                    
+                                    // 清空现有记录
+                                    const existingRecords = await window.localDB.getAllAnalysisHistory();
+                                    for (const record of existingRecords) {
+                                        await window.localDB.deleteAnalysisRecord(record.id);
+                                    }
+                                    
+                                    // 重新添加所有记录
+                                    for (const record of records) {
+                                        await window.localDB.addAnalysisRecord(record);
+                                    }
+                                    
+                                    console.log('基础同步：已将localStorage中的记录同步到IndexedDB');
+                                }
+                            } catch (e) {
+                                console.error('基础同步：解析或存储数据失败:', e);
+                            }
+                        }
+                    }
+                    
+                    // 3. 刷新表格
+                    if (typeof syncAnalysisHistory === 'function') {
+                        console.log('基础同步：刷新分析历史表格');
+                        syncAnalysisHistory();
+                    }
+                } catch (error) {
+                    console.error('执行基础同步逻辑时发生错误:', error);
+                }
+            }
+            
+            // 基础同步检查 - 页面加载时执行
+            async function basicSyncCheck() {
+                try {
+                    console.log('执行基础同步检查...');
+                    
+                    // 检查localStorage键名是否正确
+                    const oldRecords = localStorage.getItem('historyRecords');
+                    if (oldRecords) {
+                        console.warn('检测到使用旧键名(historyRecords)存储的数据');
+                        
+                        // 提示用户刷新页面以修复同步问题
+                        if (typeof showNotification === 'function') {
+                            showNotification('检测到数据存储不一致，刷新页面可以修复这个问题', 'warning');
+                        }
+                    }
+                } catch (error) {
+                    console.error('执行基础同步检查时发生错误:', error);
+                }
+            }
+            
+            // 启动同步系统初始化
+            initializeSyncSystem();
+            
+            // 从localStorage获取登录用户信息
+            function getLoggedInUser() {
+                try {
+                    // 优先使用userCredentials键，保持与其他页面一致性
+                    const credentials = localStorage.getItem('userCredentials');
+                    if (credentials) {
+                        return JSON.parse(credentials);
+                    }
+                    // 兼容旧版逻辑
+                    if (localStorage.getItem('userLoggedIn') === 'true') {
+                        const currentUser = localStorage.getItem('currentUser');
+                        return currentUser ? JSON.parse(currentUser) : null;
+                    }
+                    return null;
+                } catch (error) {
+                    console.error('获取用户信息失败:', error);
+                    return null;
+                }
+            }
+            
+            // 检查用户是否已登录
+            function checkLoginStatus() {
+                try {
+                    const user = getLoggedInUser();
+                    
+                    // 如果没有登录凭证，重定向到登录页面
+                    if (!user || !user.username) {
+                        console.warn('未检测到登录状态，重定向到登录页面...');
+                        window.location.href = 'login.html';
+                        return false;
+                    }
+                    
+                    console.log('已检测到登录状态，当前用户:', user.username);
+                    return true;
+                } catch (error) {
+                    console.error('检查登录状态时发生错误:', error);
+                    window.location.href = 'login.html';
+                    return false;
+                }
+            }
+            
+            // 页面加载时检查登录状态
+            if (!checkLoginStatus()) {
+                // 如果未登录，不执行后续代码
+                return;
+            }
+            
+            // 订阅用户资料更新事件，实现实时同步
+            if (typeof LocalDB !== 'undefined') {
+                try {
+                    const localDB = new LocalDB();
+                    localDB.subscribe('profileUpdated', async () => {
+                        console.log('接收到用户资料更新通知，正在重新加载用户资料...');
+                        
+                        // 重新加载用户资料并更新页面显示
+                        try {
+                            const userProfile = await localDB.getUserProfile();
+                            if (userProfile) {
+                                // 更新页面显示的用户信息
+                                document.getElementById('fullname').value = userProfile.fullname || document.getElementById('fullname').value;
+                                document.getElementById('email').value = userProfile.email || document.getElementById('email').value;
+                                document.getElementById('gender').value = userProfile.gender || document.getElementById('gender').value;
+                                document.getElementById('age').value = userProfile.age || document.getElementById('age').value;
+                                document.getElementById('occupation').value = userProfile.occupation || document.getElementById('occupation').value;
+                                document.getElementById('bio').value = userProfile.bio || document.getElementById('bio').value;
+                                document.getElementById('interests').value = userProfile.interests || document.getElementById('interests').value;
+                                
+                                // 更新关注点复选框
+                                if (userProfile.concerns && Array.isArray(userProfile.concerns)) {
+                                    document.querySelectorAll('input[name="concerns"]').forEach(checkbox => {
+                                        checkbox.checked = userProfile.concerns.includes(checkbox.value);
+                                    });
+                                }
+                                
+                                // 更新导航栏头像和名称
+                                if (document.getElementById('nav-avatar-desktop')) {
+                                    document.getElementById('nav-avatar-desktop').src = userProfile.avatar || document.getElementById('nav-avatar-desktop').src;
+                                }
+                                if (document.getElementById('nav-username-desktop')) {
+                                    document.getElementById('nav-username-desktop').textContent = userProfile.fullname || document.getElementById('nav-username-desktop').textContent;
+                                }
+                                if (document.getElementById('nav-avatar-mobile')) {
+                                    document.getElementById('nav-avatar-mobile').src = userProfile.avatar || document.getElementById('nav-avatar-mobile').src;
+                                }
+                                if (document.getElementById('nav-username-mobile')) {
+                                    document.getElementById('nav-username-mobile').textContent = userProfile.fullname || document.getElementById('nav-username-mobile').textContent;
+                                }
+                                
+                                console.log('用户中心页面用户资料已更新');
+                            }
+                        } catch (error) {
+                            console.error('重新加载用户资料失败:', error);
+                        }
+                    });
+                    console.log('已订阅用户资料更新事件');
+                } catch (error) {
+                    console.error('订阅用户资料更新事件失败:', error);
+                }
             }
         });
     </script>
