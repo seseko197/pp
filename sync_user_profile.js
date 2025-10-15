@@ -37,11 +37,28 @@
      // 同步用户资料数据 
      async syncProfileData() { 
          try { 
-             // 从localStorage获取最新资料 
+             // 优先从IndexedDB获取最新资料，确保实时性 
+             if (window.localDB && typeof window.localDB.getUserProfile === 'function') { 
+                 console.log('🔍 尝试从IndexedDB获取最新用户资料'); 
+                 const dbProfile = await window.localDB.getUserProfile(); 
+                 if (dbProfile) { 
+                     // 更新localStorage中的数据 
+                     localStorage.setItem(this.storageKey, JSON.stringify(dbProfile)); 
+                     // 更新页面显示 
+                     await this.updateProfileDisplay(dbProfile); 
+                     console.log('✅ 已从IndexedDB获取并更新用户资料'); 
+                     return; 
+                 } 
+             } 
+              
+             // 如果没有从IndexedDB获取到，再从localStorage获取 
              const profileData = localStorage.getItem(this.storageKey); 
              if (profileData) { 
                  const profile = JSON.parse(profileData); 
                  await this.updateProfileDisplay(profile); 
+                 console.log('✅ 已从localStorage获取用户资料'); 
+             } else { 
+                 console.log('⚠️ 未找到用户资料数据'); 
              } 
          } catch (error) { 
              console.error('同步用户资料失败:', error); 
@@ -59,12 +76,12 @@
              } 
          }); 
 
-         // 更新所有用户名元素 
-         const nameElements = document.querySelectorAll('[id*="username"], [id*="name"], [class*="username"], [class*="name"]'); 
-         nameElements.forEach(element => { 
-             if (element.textContent && profile.fullname) { 
-                 element.textContent = profile.fullname; 
-             } 
+         // 更新所有用户名元素 - 更精确的选择器以避免误替换
+         const nameElements = document.querySelectorAll('#nav-username-desktop, #nav-username-mobile, [id="username"], [id="fullname"], [class="username-display"], [class="fullname-display"]');
+         nameElements.forEach(element => {
+             if (element.textContent && profile.fullname) {
+                 element.textContent = profile.fullname;
+             }
          }); 
 
          // 更新导航栏用户信息 

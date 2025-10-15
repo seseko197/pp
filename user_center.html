@@ -168,6 +168,10 @@
                                 <select id="gender" name="gender" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all">
                                     <option value="male">男</option>
                                     <option value="female">女</option>
+                                    <option value="trans">跨性别者（Trans）</option>
+                                    <option value="agender">无性别（Agender）</option>
+                                    <option value="pangender">泛性别（Pangender）</option>
+                                    <option value="walmart_bag">沃尔玛塑料袋</option>
                                     <option value="other">其他</option>
                                 </select>
                             </div>
@@ -1167,31 +1171,71 @@
                 
                 console.log(`从IndexedDB读取到的记录数量: ${historyRecords.length}`);
                 
-                // 如果没有历史记录，创建一些示例记录以便测试
+                // 如果没有历史记录，尝试从localStorage获取
                 if (historyRecords.length === 0) {
-                    console.log('数据库中没有分析历史记录，创建示例数据');
+                    console.log('数据库中没有分析历史记录，尝试从localStorage获取');
+                    const localStorageRecords = localStorage.getItem('analysisHistory');
                     
-                    // 创建10条示例记录
-                    const mockRecords = [
-                        { date: '2023-08-01', model: '随机森林', healthIndex: 85, timestamp: Date.now() - 86400000 * 0 },
-                        { date: '2023-07-31', model: 'SVM模型', healthIndex: 82, timestamp: Date.now() - 86400000 * 1 },
-                        { date: '2023-07-30', model: '神经网络', healthIndex: 79, timestamp: Date.now() - 86400000 * 2 },
-                        { date: '2023-07-29', model: '决策树', healthIndex: 76, timestamp: Date.now() - 86400000 * 3 },
-                        { date: '2023-07-28', model: '随机森林', healthIndex: 84, timestamp: Date.now() - 86400000 * 4 },
-                        { date: '2023-07-27', model: 'SVM模型', healthIndex: 80, timestamp: Date.now() - 86400000 * 5 },
-                        { date: '2023-07-26', model: '神经网络', healthIndex: 77, timestamp: Date.now() - 86400000 * 6 },
-                        { date: '2023-07-25', model: '决策树', healthIndex: 75, timestamp: Date.now() - 86400000 * 7 },
-                        { date: '2023-07-24', model: '随机森林', healthIndex: 78, timestamp: Date.now() - 86400000 * 8 },
-                        { date: '2023-07-23', model: 'SVM模型', healthIndex: 76, timestamp: Date.now() - 86400000 * 9 }
-                    ];
-                    
-                    // 保存示例记录到数据库
-                    for (const record of mockRecords) {
-                        await localDB.addAnalysisRecord(record);
+                    if (localStorageRecords) {
+                        try {
+                            const records = JSON.parse(localStorageRecords);
+                            if (Array.isArray(records) && records.length > 0) {
+                                console.log(`开始从localStorage同步 ${records.length} 条分析记录到IndexedDB`);
+                                for (const record of records) {
+                                    // 避免重复添加相同的记录
+                                    // 可以基于timestamp进行简单的去重检查
+                                    const exists = await checkRecordExists(record.timestamp);
+                                    if (!exists) {
+                                        await localDB.addAnalysisRecord(record);
+                                    }
+                                }
+                                console.log('同步完成');
+                                // 重新获取记录
+                                historyRecords = await localDB.getAllAnalysisHistory();
+                            }
+                        } catch (e) {
+                            console.error('解析localStorage数据失败:', e);
+                        }
+                    } else {
+                        // 如果localStorage也没有记录，创建示例数据
+                        console.log('localStorage中也没有分析历史记录，创建示例数据');
+                        
+                        // 创建10条示例记录
+                        const mockRecords = [
+                            { date: '2023-08-01', model: '随机森林', healthIndex: 85, timestamp: Date.now() - 86400000 * 0 },
+                            { date: '2023-07-31', model: 'SVM模型', healthIndex: 82, timestamp: Date.now() - 86400000 * 1 },
+                            { date: '2023-07-30', model: '神经网络', healthIndex: 79, timestamp: Date.now() - 86400000 * 2 },
+                            { date: '2023-07-29', model: '决策树', healthIndex: 76, timestamp: Date.now() - 86400000 * 3 },
+                            { date: '2023-07-28', model: '随机森林', healthIndex: 84, timestamp: Date.now() - 86400000 * 4 },
+                            { date: '2023-07-27', model: 'SVM模型', healthIndex: 80, timestamp: Date.now() - 86400000 * 5 },
+                            { date: '2023-07-26', model: '神经网络', healthIndex: 77, timestamp: Date.now() - 86400000 * 6 },
+                            { date: '2023-07-25', model: '决策树', healthIndex: 75, timestamp: Date.now() - 86400000 * 7 },
+                            { date: '2023-07-24', model: '随机森林', healthIndex: 78, timestamp: Date.now() - 86400000 * 8 },
+                            { date: '2023-07-23', model: 'SVM模型', healthIndex: 76, timestamp: Date.now() - 86400000 * 9 }
+                        ];
+                        
+                        // 保存示例记录到数据库
+                        for (const record of mockRecords) {
+                            await localDB.addAnalysisRecord(record);
+                        }
+                        
+                        // 重新获取记录
+                        historyRecords = await localDB.getAllAnalysisHistory();
                     }
-                    
-                    // 重新获取记录
-                    historyRecords = await localDB.getAllAnalysisHistory();
+                } else {
+                    // 从IndexedDB获取记录后，同步更新localStorage
+                    console.log('将IndexedDB中的记录同步到localStorage');
+                    const simplifiedRecords = historyRecords.map(record => ({
+                        date: record.date,
+                        model: record.model,
+                        healthIndex: record.healthIndex,
+                        confidence: record.confidence,
+                        details: record.details,
+                        advice: record.advice,
+                        timestamp: record.timestamp,
+                        createdAt: record.createdAt
+                    }));
+                    localStorage.setItem('analysisHistory', JSON.stringify(simplifiedRecords));
                 }
                 
                 // 使用具体的选择器确保找到正确的表格
@@ -1271,6 +1315,66 @@
             }
         }
         
+        // 检查记录是否已存在（避免重复添加）
+        async function checkRecordExists(timestamp) {
+            try {
+                await localDB.waitForInit();
+                const allRecords = await localDB.getAllAnalysisHistory();
+                return allRecords.some(record => record.timestamp === timestamp);
+            } catch (error) {
+                console.error('检查记录是否存在时出错:', error);
+                return false;
+            }
+        }
+        
+        // 为查看详情按钮添加更完整的功能
+        function enhanceViewDetailFunctionality() {
+            const viewButtons = document.querySelectorAll('a[href="#"]:not(.delete-btn)');
+            viewButtons.forEach(button => {
+                if (button.textContent.includes('查看详情')) {
+                    button.onclick = function(e) {
+                        e.preventDefault();
+                        const row = this.closest('tr');
+                        const recordId = row.dataset.recordId;
+                        
+                        // 从localStorage获取完整记录数据
+                        const historyRecords = JSON.parse(localStorage.getItem('analysisHistory')) || [];
+                        const record = historyRecords.find(r => r.id === recordId || 
+                                                                 // 如果找不到id匹配，使用时间戳近似匹配
+                                                                 Math.abs(r.timestamp - parseInt(row.querySelector('td:nth-child(2)').textContent.replace(/-/g, ''))) < 1000);
+                        
+                        if (record) {
+                            console.log('查看记录详情:', record);
+                            // 这里可以实现显示详情弹窗的逻辑
+                            // 简化版本：显示一个包含详细信息的alert
+                            let detailStr = `日期: ${record.date}\n` +
+                                           `模型: ${record.model}\n` +
+                                           `健康指数: ${record.healthIndex}\n`;
+                            
+                            if (record.confidence) {
+                                detailStr += `置信度: ${record.confidence}\n`;
+                            }
+                            
+                            if (record.details) {
+                                detailStr += '详细指标:\n';
+                                for (const [key, value] of Object.entries(record.details)) {
+                                    detailStr += `  ${key}: ${value}%\n`;
+                                }
+                            }
+                            
+                            if (record.advice) {
+                                detailStr += `\n建议: ${record.advice}`;
+                            }
+                            
+                            alert(detailStr);
+                        } else {
+                            alert('查看分析详情');
+                        }
+                    };
+                }
+            });
+        }
+        
         // 绑定表格相关事件
         function bindTableEvents() {
             // 绑定删除按钮事件
@@ -1326,19 +1430,8 @@
                 };
             });
             
-            // 绑定查看详情按钮事件
-            const viewButtons = document.querySelectorAll('a[href="#"]');
-            viewButtons.forEach(button => {
-                if (button.textContent.includes('查看详情')) {
-                    button.onclick = function(e) {
-                        e.preventDefault();
-                        const row = this.closest('tr');
-                        const recordId = row.dataset.recordId;
-                        console.log('查看记录详情:', recordId);
-                        alert('查看分析详情');
-                    };
-                }
-            });
+            // 调用增强的详情查看功能
+            enhanceViewDetailFunctionality();
             
             // 绑定表格行悬停效果
             const tableRows = document.querySelectorAll('tbody tr');
@@ -1681,7 +1774,7 @@
     </script>
 <!-- 同步修复工具支持脚本 -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('=== 用户中心页面加载完成，开始初始化同步系统 ===');
             
             // 初始化终极同步修复工具
@@ -1700,8 +1793,7 @@
                         window.ultimateSyncFix.init();
                         console.log('终极同步修复工具已初始化');
                     } else {
-                        console.log('正在尝试动态加载ultimate_sync_fix.js脚本...');
-                        // 动态加载同步修复工具脚本
+                        // 动态加载同步修复脚本
                         await loadSyncFixScript();
                     }
                 } catch (error) {
@@ -1720,9 +1812,7 @@
                     script.src = 'ultimate_sync_fix.js';
                     script.onload = function() {
                         console.log('ultimate_sync_fix.js脚本加载成功');
-                        if (window.ultimateSyncFix && typeof window.ultimateSyncFix.init === 'function') {
-                            window.ultimateSyncFix.init();
-                        }
+                        // 脚本加载后会自动创建window.ultimateSyncSystem实例
                         resolve();
                     };
                     script.onerror = function(error) {
@@ -1896,11 +1986,41 @@
                 return;
             }
             
-            // 订阅用户资料更新事件，实现实时同步
+            // 确保用户资料同步系统正确初始化
+            if (window.userProfileSync && typeof window.userProfileSync.syncProfileData === 'function') {
+                console.log('✅ 使用userProfileSync系统同步用户资料');
+                await window.userProfileSync.syncProfileData();
+            } else if (window.ultimateSyncSystem && typeof window.ultimateSyncSystem.syncUserProfile === 'function') {
+                console.log('✅ 使用ultimateSyncSystem同步用户资料');
+                await window.ultimateSyncSystem.syncUserProfile();
+            } else {
+                // 备用方案：使用原有加载逻辑
+                console.log('⚠️ 使用备用同步逻辑');
+                await loadUserProfile();
+            }
+            
+            // 设置定期同步以确保数据最新，所有情况下都适用
+            setInterval(async () => {
+                try {
+                    console.log('⏰ 执行定期资料同步...');
+                    if (window.userProfileSync && typeof window.userProfileSync.syncProfileData === 'function') {
+                        await window.userProfileSync.syncProfileData();
+                    } else if (window.ultimateSyncSystem && typeof window.ultimateSyncSystem.syncUserProfile === 'function') {
+                        await window.ultimateSyncSystem.syncUserProfile();
+                    } else {
+                        await loadUserProfile();
+                    }
+                } catch (error) {
+                    console.error('定期同步失败:', error);
+                }
+            }, 30000); // 每30秒同步一次
+            
+            // 历史记录同步逻辑
             if (typeof LocalDB !== 'undefined') {
                 try {
-                    const localDB = new LocalDB();
-                    localDB.subscribe('profileUpdated', async () => {
+                    // 使用全局的window.localDB实例
+                    // 订阅全局自定义事件，与其他页面保持一致
+                    window.addEventListener('ultimateProfileUpdated', async () => {
                         console.log('接收到用户资料更新通知，正在重新加载用户资料...');
                         
                         // 重新加载用户资料并更新页面显示
@@ -1944,10 +2064,184 @@
                         }
                     });
                     console.log('已订阅用户资料更新事件');
+                    
+                    // 添加历史记录更新订阅
+                    // 监听window的自定义事件，与analysis.html保持一致
+                    window.addEventListener('analysisHistoryUpdated', async () => {
+                        console.log('🔄 接收到历史记录更新通知，正在同步分析历史...');
+                        try {
+                            await syncAnalysisHistory();
+                            showNotification('历史记录已同步', 'success');
+                        } catch (error) {
+                            console.error('同步历史记录失败:', error);
+                        }
+                    });
+                    console.log('已订阅历史记录更新事件');
                 } catch (error) {
-                    console.error('订阅用户资料更新事件失败:', error);
+                    console.error('订阅事件失败:', error);
                 }
             }
+            
+            // 监听localStorage变化，实现跨页面同步
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'analysisHistory' || e.key === 'userCredentials' || e.key === 'userProfileData') {
+                    console.log(`📤 检测到${e.key}变化，触发同步...`);
+                    // 延迟执行以确保数据写入完成
+                    setTimeout(() => {
+                        try {
+                            // 如果是历史记录变化
+                            if (e.key === 'analysisHistory') {
+                                syncAnalysisHistory();
+                            } else {
+                                // 如果是用户资料变化
+                                loadUserProfile();
+                            }
+                        } catch (error) {
+                            console.error('跨页面同步失败:', error);
+                        }
+                    }, 100);
+                }
+            });
+            
+            // 添加定期同步历史记录
+            setInterval(async () => {
+                try {
+                    console.log('⏰ 执行定期历史记录同步...');
+                    await syncAnalysisHistory();
+                } catch (error) {
+                    console.error('定期同步失败:', error);
+                }
+            }, 30000); // 每30秒同步一次
+            
+            // 监听页面可见性变化，当页面重新可见时同步数据
+            document.addEventListener('visibilitychange', async () => {
+                if (document.visibilityState === 'visible') {
+                    console.log('👁️ 页面重新可见，执行同步...');
+                    try {
+                        await syncAnalysisHistory();
+                    } catch (error) {
+                        console.error('页面可见时同步失败:', error);
+                    }
+                }
+            });
+            
+            // 加载用户资料
+            async function loadUserProfile() {
+                try {
+                    // 首先检查是否有同步数据
+                    const syncData = localStorage.getItem('userProfileData');
+                    if (syncData) {
+                        const profile = JSON.parse(syncData);
+                        updateProfileDisplay(profile);
+                        console.log('从同步数据加载用户资料');
+                        return;
+                    }
+                    
+                    // 原有数据库加载逻辑
+                    if (!window.localDB) {
+                        console.warn('localDB未定义，无法加载用户资料');
+                        return;
+                    }
+                    
+                    const profile = await window.localDB.getUserProfile();
+                    
+                    if (profile) {
+                        updateProfileDisplay(profile);
+                        
+                        // 保存到同步存储
+                        localStorage.setItem('userProfileData', JSON.stringify(profile));
+                    }
+                } catch (error) {
+                    console.error('加载用户资料失败:', error);
+                }
+            }
+            
+            // 更新资料显示
+            function updateProfileDisplay(profile) {
+                // 设置默认值
+                const defaultName = profile.name || profile.fullname || '用户';
+                const defaultAvatar = profile.avatar || 'https://picsum.photos/id/91/40/40';
+                
+                // 更新桌面端导航栏
+                const desktopUserDiv = document.querySelector('.hidden.md\:flex.items-center.space-x-6 > div.flex.items-center.space-x-2');
+                if (desktopUserDiv) {
+                    const desktopAvatar = desktopUserDiv.querySelector('img');
+                    const desktopName = desktopUserDiv.querySelector('span');
+                    if (desktopAvatar) {
+                        desktopAvatar.src = defaultAvatar;
+                        desktopAvatar.alt = defaultName;
+                    }
+                    if (desktopName) {
+                        desktopName.textContent = defaultName;
+                    }
+                    console.log('已更新桌面端用户信息');
+                }
+                
+                // 更新移动端导航栏
+                const mobileMenu = document.getElementById('mobile-menu');
+                if (mobileMenu) {
+                    const mobileUserDiv = mobileMenu.querySelector('div.flex.items-center.space-x-2');
+                    if (mobileUserDiv) {
+                        const mobileAvatar = mobileUserDiv.querySelector('img');
+                        const mobileName = mobileUserDiv.querySelector('span');
+                        if (mobileAvatar) {
+                            mobileAvatar.src = defaultAvatar;
+                            mobileAvatar.alt = defaultName;
+                        }
+                        if (mobileName) {
+                            mobileName.textContent = defaultName;
+                        }
+                        console.log('已更新移动端用户信息');
+                    }
+                }
+                
+                // 更新用户中心页面表单
+                if (document.getElementById('fullname')) {
+                    document.getElementById('fullname').value = profile.fullname || document.getElementById('fullname').value;
+                }
+                if (document.getElementById('email')) {
+                    document.getElementById('email').value = profile.email || document.getElementById('email').value;
+                }
+                if (document.getElementById('gender')) {
+                    document.getElementById('gender').value = profile.gender || document.getElementById('gender').value;
+                }
+                if (document.getElementById('age')) {
+                    document.getElementById('age').value = profile.age || document.getElementById('age').value;
+                }
+                if (document.getElementById('occupation')) {
+                    document.getElementById('occupation').value = profile.occupation || document.getElementById('occupation').value;
+                }
+                if (document.getElementById('bio')) {
+                    document.getElementById('bio').value = profile.bio || document.getElementById('bio').value;
+                }
+                if (document.getElementById('interests')) {
+                    document.getElementById('interests').value = profile.interests || document.getElementById('interests').value;
+                }
+                
+                // 更新关注点复选框
+                if (profile.concerns && Array.isArray(profile.concerns)) {
+                    document.querySelectorAll('input[name="concerns"]').forEach(checkbox => {
+                        checkbox.checked = profile.concerns.includes(checkbox.value);
+                    });
+                }
+            }
+            
+            // 设置对分析历史更新事件的监听
+            window.addEventListener('analysisHistoryUpdated', function(event) {
+                console.log('收到分析历史更新事件，重新同步数据');
+                syncAnalysisHistory();
+            });
+            
+            // 设置对storage事件的监听，实现跨页面同步
+            window.addEventListener('storage', function(event) {
+                if (event.key === 'analysisHistory') {
+                    console.log('localStorage中的分析历史发生变化，触发同步');
+                    // 延迟执行以确保数据已完全写入
+                    setTimeout(() => {
+                        syncAnalysisHistory();
+                    }, 100);
+                }
+            });
         });
     </script>
     </body>

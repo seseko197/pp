@@ -214,11 +214,24 @@
                 });
             }
             
-            // 辅助函数 - 保存和加载凭证
+            // 辅助函数 - 加载保存的凭证（只加载用户名，不加载密码）
             function loadSavedCredentials() {
                 try {
+                    // 新的安全存储方式
+                    const rememberedUser = localStorage.getItem('rememberedUser');
+                    if (rememberedUser) {
+                        return { username: rememberedUser };
+                    }
+                    
+                    // 兼容旧的存储方式
                     const saved = localStorage.getItem('savedCredentials');
-                    return saved ? JSON.parse(saved) : null;
+                    if (saved) {
+                        const credentials = JSON.parse(saved);
+                        // 只返回用户名，忽略密码
+                        return { username: credentials.username };
+                    }
+                    
+                    return null;
                 } catch (error) {
                     console.error('加载保存的凭证失败:', error);
                     return null;
@@ -246,11 +259,13 @@
                     loginTime: userProfile.loginTime
                 }));
                 
-                // 处理记住我功能
+                // 处理记住我功能 - 不再存储明文密码
                 if (rememberMe) {
-                    localStorage.setItem('savedCredentials', JSON.stringify({ username, password }));
+                    // 只存储用户名，不存储密码
+                    localStorage.setItem('rememberedUser', username);
                 } else {
-                    localStorage.removeItem('savedCredentials');
+                    localStorage.removeItem('rememberedUser');
+                    localStorage.removeItem('savedCredentials'); // 清理旧的存储方式
                 }
                 
                 // 触发全局用户资料同步

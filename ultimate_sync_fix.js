@@ -23,34 +23,43 @@ class UltimateSyncFix {
         this.setupHeartbeat(); 
     } 
 
-    setupEventListeners() { 
-        // localStorage变化监听 
+    setupEventListeners() {
+        // localStorage变化监听
         window.addEventListener('storage', (e) => { 
-            this.handleStorageChange(e); 
+            this.handleStorageChange(e);
         }); 
 
-        // 页面可见性变化 
+        // 页面可见性变化
         document.addEventListener('visibilitychange', () => { 
             if (!document.hidden) { 
-                console.log('📱 页面变为可见，触发同步检查'); 
-                this.syncAllPages(); 
-            } 
+                // 仅在开发环境输出日志
+        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+            console.log('📱 页面变为可见，触发同步检查');
+        }
+                this.syncAllPages();
+            }
         }); 
 
-        // 页面聚焦事件 
+        // 页面聚焦事件
         window.addEventListener('focus', () => { 
-            console.log('🎯 页面获得焦点，触发同步检查'); 
-            this.syncAllPages(); 
+            // 仅在开发环境输出日志
+        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+            console.log('🎯 页面获得焦点，触发同步检查');
+        }
+            this.syncAllPages();
         }); 
 
-        // 定期同步（每5秒） 
+        // 定期同步（从5秒改为30秒）
         setInterval(() => { 
-            this.checkForUpdates(); 
-        }, 5000); 
+            this.checkForUpdates();
+        }, 30000);
     } 
 
-    handleStorageChange(event) { 
-        console.log('🔄 检测到存储变化:', event.key); 
+    handleStorageChange(event) {
+        // 仅在开发环境输出日志
+        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+            console.log('🔄 检测到存储变化:', event.key);
+        }
         
         switch (event.key) { 
             case this.syncKeys.profile: 
@@ -62,12 +71,15 @@ class UltimateSyncFix {
             case 'userProfileUpdated': 
             case 'userProfileData': 
                 this.legacySync(); 
-                break; 
-        } 
+                break;
+        }
     } 
 
     async syncAllPages() { 
-        console.log('🔄 开始全页面同步'); 
+        // 仅在开发环境输出日志
+        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+            console.log('🔄 开始全页面同步');
+        }
         
         try { 
             await this.syncUserProfile(); 
@@ -75,7 +87,7 @@ class UltimateSyncFix {
             this.updateSyncTimestamp(); 
         } catch (error) { 
             console.error('同步失败:', error); 
-        } 
+        }
     } 
 
     async syncUserProfile() { 
@@ -87,7 +99,10 @@ class UltimateSyncFix {
             if (profileData) { 
                 const profile = JSON.parse(profileData); 
                 await this.updateProfileDisplay(profile); 
-                console.log('✅ 用户资料同步完成'); 
+                // 仅在开发环境输出日志
+                if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+                    console.log('✅ 用户资料同步完成');
+                }
                 return true; 
             } 
 
@@ -96,28 +111,37 @@ class UltimateSyncFix {
                 const profile = await window.localDB.getUserProfile(); 
                 if (profile) { 
                     await this.updateProfileDisplay(profile); 
-                    console.log('✅ 从IndexedDB同步用户资料完成'); 
+                    // 仅在开发环境输出日志
+                if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+                    console.log('✅ 从IndexedDB同步用户资料完成');
+                }
                     return true; 
                 } 
             } 
 
-            console.log('⚠️ 未找到用户资料数据'); 
+            // 仅在开发环境输出日志
+                if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+                    console.log('⚠️ 未找到用户资料数据');
+                }
             return false; 
         } catch (error) { 
             console.error('用户资料同步失败:', error); 
             return false; 
-        } 
+        }
     } 
 
     async syncAnalysisHistory() { 
         try { 
             if (typeof syncAnalysisHistory === 'function') { 
                 await syncAnalysisHistory(); 
-                console.log('✅ 分析历史同步完成'); 
+                // 仅在开发环境输出日志
+                if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+                    console.log('✅ 分析历史同步完成');
+                }
             } 
         } catch (error) { 
             console.error('分析历史同步失败:', error); 
-        } 
+        }
     } 
 
     async updateProfileDisplay(profile) { 
@@ -145,27 +169,31 @@ class UltimateSyncFix {
             }); 
         }); 
 
-        // 更新所有姓名元素 - 增强版
+        // 更新所有姓名元素 - 使用精确的选择器以避免误替换
         const nameSelectors = [ 
             '#user-name', 
             '#nav-username-desktop', 
             '#nav-username-mobile', 
-            '[id*="name"]', 
-            '[class*="name"]', 
-            '.username',
-            '.text-gray-700.font-medium', // 添加常见样式组合选择器
-            '.font-medium.text-gray-700'  // 添加另一种常见样式组合选择器
+            '[id="username"]', 
+            '[id="fullname"]', 
+            '.username-display',
+            '.fullname-display'
         ]; 
 
         nameSelectors.forEach(selector => { 
             document.querySelectorAll(selector).forEach(element => { 
-                // 简化判断条件，只要profile.fullname存在就更新
-                if (profile.fullname) { 
+                if (profile.fullname && element.textContent && 
+                    // 确保不替换表单标签和非用户信息元素
+                    !element.matches('label') && 
+                    !element.closest('form') && 
+                    !element.textContent.includes('数据类型') && 
+                    !element.textContent.includes('参考标准')
+                ) { 
                     // 记录更新前的内容，便于调试
                     const oldText = element.textContent;
                     element.textContent = profile.fullname;
                     // 只有当内容实际发生变化时才记录日志
-                    if (oldText !== profile.fullname) {
+                    if (oldText !== profile.fullname && typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
                         console.log(`🔄 已更新元素: ${selector}, 从 "${oldText}" 到 "${profile.fullname}"`);
                     }
                 } 
@@ -209,8 +237,12 @@ class UltimateSyncFix {
     }
 
     setupHeartbeat() {
-        console.log('💓 设置心跳检测系统');
+        // 仅在开发环境输出日志
+        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+            console.log('💓 设置心跳检测系统');
+        }
         
+        // 从10秒改为60秒
         setInterval(() => {
             const heartbeat = {
                 timestamp: Date.now(),
@@ -223,35 +255,44 @@ class UltimateSyncFix {
             } catch (error) {
                 console.error('心跳检测失败:', error);
             }
-        }, 10000);
+        }, 60000);
     }
 
     checkForUpdates() {
-        console.log('🔍 检查更新...');
+        // 仅在开发环境输出日志
+        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+            console.log('🔍 检查更新...');
+        }
         
-        try {
+        try { 
             // 检查时间戳是否更新
-            const lastSync = localStorage.getItem(this.syncKeys.timestamp);
-            const currentTimestamp = Date.now();
+            const lastSync = localStorage.getItem(this.syncKeys.timestamp); 
+            const currentTimestamp = Date.now(); 
             
-            // 如果超过10秒没有同步，强制同步
-            if (!lastSync || (currentTimestamp - parseInt(lastSync)) > 10000) {
-                console.log('⏱️ 同步时间戳过期，触发强制同步');
-                this.syncAllPages();
-            }
-        } catch (error) {
-            console.error('更新检查失败:', error);
+            // 如果超过30秒没有同步，强制同步（从10秒改为30秒）
+            if (!lastSync || (currentTimestamp - parseInt(lastSync)) > 30000) { 
+                // 仅在开发环境输出日志
+                    if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+                        console.log('⏱️ 同步时间戳过期，触发强制同步');
+                    }
+                this.syncAllPages(); 
+            } 
+        } catch (error) { 
+            console.error('更新检查失败:', error); 
         }
     }
 
-    legacySync() {
-        console.log('🔄 兼容旧系统同步');
+    legacySync() { 
+        // 仅在开发环境输出日志
+        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
+            console.log('🔄 兼容旧系统同步');
+        }
         
-        try {
+        try { 
             // 处理旧系统的同步
-            this.syncUserProfile();
-        } catch (error) {
-            console.error('旧系统同步失败:', error);
+            this.syncUserProfile(); 
+        } catch (error) { 
+            console.error('旧系统同步失败:', error); 
         }
     }
 }
