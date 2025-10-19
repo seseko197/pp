@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API服务测试页面</title>
+    <script src="api_service.js"></script>
+    <script src="unified_sync_system.js"></script>
+    <script src="core_sync_system.js"></script>
+    <script src="init_sync_system.js"></script>
+    <script src="core_sync_init.js"></script>
+    <script src="localdb.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f4f4f4;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow: auto;
+        }
+        .error {
+            color: #d32f2f;
+        }
+        .success {
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>API服务和同步系统测试</h1>
+    
+    <!-- 健康检查测试 -->
+    <div class="test-section">
+        <h2>1. 服务器健康检查</h2>
+        <button id="test-health">测试健康检查</button>
+        <div id="health-result" class="result"></div>
+    </div>
+    
+    <!-- API服务初始化测试 -->
+    <div class="test-section">
+        <h2>2. API服务初始化测试</h2>
+        <button id="test-api-init">测试API服务初始化</button>
+        <div id="api-init-result" class="result"></div>
+    </div>
+    
+    <!-- 本地存储测试 -->
+    <div class="test-section">
+        <h2>3. 本地存储测试</h2>
+        <button id="test-local-storage">测试本地存储</button>
+        <div id="local-storage-result" class="result"></div>
+    </div>
+    
+    <!-- 同步系统测试 -->
+    <div class="test-section">
+        <h2>4. 同步系统测试</h2>
+        <button id="test-sync-system">测试同步系统初始化</button>
+        <div id="sync-system-result" class="result"></div>
+    </div>
+    
+    <!-- 一键测试所有 -->
+    <div class="test-section">
+        <h2>5. 一键测试所有功能</h2>
+        <button id="test-all">运行所有测试</button>
+        <div id="all-tests-result" class="result"></div>
+    </div>
+    
+    <script>
+        // 辅助函数 - 显示结果
+        function showResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = content;
+            element.className = isError ? 'result error' : 'result success';
+        }
+        
+        // 测试健康检查
+        document.getElementById('test-health').addEventListener('click', async function() {
+            try {
+                const response = await fetch('http://localhost:50000/api/health');
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('health-result', JSON.stringify(data, null, 2));
+                } else {
+                    showResult('health-result', `健康检查失败: ${response.status}`, true);
+                }
+            } catch (error) {
+                showResult('health-result', `错误: ${error.message}`, true);
+            }
+        });
+        
+        // 测试API服务初始化
+        document.getElementById('test-api-init').addEventListener('click', function() {
+            try {
+                const apiServiceExists = typeof window.apiService !== 'undefined';
+                const result = {
+                    apiServiceExists: apiServiceExists,
+                    token: apiServiceExists ? window.apiService.getToken() : '不存在',
+                    isLoggedIn: apiServiceExists ? window.apiService.isLoggedIn() : '不存在',
+                    baseUrl: apiServiceExists ? window.apiService.baseUrl : '不存在'
+                };
+                showResult('api-init-result', JSON.stringify(result, null, 2));
+            } catch (error) {
+                showResult('api-init-result', `错误: ${error.message}`, true);
+            }
+        });
+        
+        // 测试本地存储
+        document.getElementById('test-local-storage').addEventListener('click', function() {
+            try {
+                // 测试localStorage
+                const testKey = 'test_storage_key';
+                const testValue = 'test_storage_value';
+                
+                localStorage.setItem(testKey, testValue);
+                const retrievedValue = localStorage.getItem(testKey);
+                localStorage.removeItem(testKey);
+                
+                // 检查localdb.js是否正常加载
+                const localDBExists = typeof window.localDB !== 'undefined';
+                
+                // 检查存储的用户数据
+                const currentUser = localStorage.getItem('currentUser');
+                const analysisHistory = localStorage.getItem('analysisHistory');
+                
+                const result = {
+                    localStorageWorking: retrievedValue === testValue,
+                    localDBExists: localDBExists,
+                    hasCurrentUser: !!currentUser,
+                    hasAnalysisHistory: !!analysisHistory,
+                    storageKeys: Object.keys(localStorage)
+                };
+                
+                showResult('local-storage-result', JSON.stringify(result, null, 2));
+            } catch (error) {
+                showResult('local-storage-result', `错误: ${error.message}`, true);
+            }
+        });
+        
+        // 测试同步系统
+        document.getElementById('test-sync-system').addEventListener('click', function() {
+            try {
+                const result = {
+                    coreSyncSystemExists: typeof window.coreSyncSystem !== 'undefined',
+                    unifiedSyncSystemExists: typeof window.unifiedSyncSystem !== 'undefined',
+                    syncBridgeExists: typeof window.syncBridge !== 'undefined',
+                    syncSystemConfigExists: typeof window.syncSystemConfig !== 'undefined'
+                };
+                showResult('sync-system-result', JSON.stringify(result, null, 2));
+            } catch (error) {
+                showResult('sync-system-result', `错误: ${error.message}`, true);
+            }
+        });
+        
+        // 一键测试所有功能
+        document.getElementById('test-all').addEventListener('click', async function() {
+            const allResults = {};
+            
+            // 1. 测试健康检查
+            try {
+                const response = await fetch('http://localhost:50000/api/health');
+                allResults.healthCheck = response.ok ? '成功' : `失败: ${response.status}`;
+            } catch (error) {
+                allResults.healthCheck = `错误: ${error.message}`;
+            }
+            
+            // 2. 测试API服务初始化
+            try {
+                allResults.apiService = typeof window.apiService !== 'undefined' ? '成功' : '失败: apiService未定义';
+            } catch (error) {
+                allResults.apiService = `错误: ${error.message}`;
+            }
+            
+            // 3. 测试本地存储
+            try {
+                const testKey = 'test_storage_key';
+                localStorage.setItem(testKey, 'test');
+                const success = localStorage.getItem(testKey) === 'test';
+                localStorage.removeItem(testKey);
+                allResults.localStorage = success ? '成功' : '失败';
+            } catch (error) {
+                allResults.localStorage = `错误: ${error.message}`;
+            }
+            
+            // 4. 测试同步系统
+            try {
+                const hasCoreSync = typeof window.coreSyncSystem !== 'undefined';
+                const hasUnifiedSync = typeof window.unifiedSyncSystem !== 'undefined';
+                // 任一同步系统存在即视为成功
+                allResults.syncSystem = (hasCoreSync || hasUnifiedSync) ? '成功' : '失败: 未检测到同步系统';
+                allResults.userProfileSync = (hasCoreSync || hasUnifiedSync) ? '成功' : '失败: 未检测到用户资料同步功能';
+            } catch (error) {
+                allResults.syncSystem = `错误: ${error.message}`;
+            }
+            
+            // 5. 检查关键文件是否加载
+            try {
+                allResults.localDB = typeof window.localDB !== 'undefined' ? '成功' : '失败: localDB未定义';
+            } catch (error) {
+                allResults.localDB = `错误: ${error.message}`;
+            }
+            
+            // 6. 总结
+            const allSuccessful = Object.values(allResults).every(result => result === '成功');
+            allResults.summary = allSuccessful ? '所有测试通过！' : '部分测试失败，请检查问题。';
+            
+            showResult('all-tests-result', JSON.stringify(allResults, null, 2), !allSuccessful);
+        });
+        
+        // 页面加载时自动运行所有测试
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.getElementById('test-all').click();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

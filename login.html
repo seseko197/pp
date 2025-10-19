@@ -6,7 +6,7 @@
     <title>抑郁症分析系统 - 用户登录</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <script src="sync_user_profile.js"></script>
+    <!-- 简化的登录功能 -->
     <script>
         tailwind.config = {
             theme: {
@@ -60,6 +60,8 @@
             </div>
             
             <form id="login-form" class="space-y-6">
+                <!-- 引入API服务 -->
+                <script src="api_service.js"></script>
                 <!-- 用户名输入 -->
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
@@ -108,7 +110,7 @@
                 
                 <!-- 注册链接 -->
                 <div class="text-center text-sm text-gray-600">
-                    还没有账户？ <a href="#" class="text-primary hover:text-primary/80 transition-colors">立即注册</a>
+                    还没有账户？ <a href="register.html" class="text-primary hover:text-primary/80 transition-colors">立即注册</a>
                 </div>
             </form>
             
@@ -191,21 +193,14 @@
 
     <!-- JavaScript -->
     <script>
-        // 等待DOM完全加载后再执行脚本
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM已完全加载，开始初始化登录页面...');
-            
             // 密码显示切换
             const togglePassword = document.getElementById('toggle-password');
             const passwordInput = document.getElementById('password');
             
             if (togglePassword && passwordInput) {
                 togglePassword.addEventListener('click', function() {
-                    // 切换密码字段的类型
-                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                    passwordInput.setAttribute('type', type);
-                    
-                    // 切换图标
+                    passwordInput.setAttribute('type', passwordInput.getAttribute('type') === 'password' ? 'text' : 'password');
                     const iconElement = this.querySelector('i');
                     if (iconElement) {
                         iconElement.classList.toggle('fa-eye');
@@ -214,69 +209,70 @@
                 });
             }
             
-            // 辅助函数 - 加载保存的凭证（只加载用户名，不加载密码）
+            // 加载保存的凭证
             function loadSavedCredentials() {
                 try {
-                    // 新的安全存储方式
                     const rememberedUser = localStorage.getItem('rememberedUser');
-                    if (rememberedUser) {
-                        return { username: rememberedUser };
-                    }
+                    if (rememberedUser) return { username: rememberedUser };
                     
-                    // 兼容旧的存储方式
                     const saved = localStorage.getItem('savedCredentials');
                     if (saved) {
                         const credentials = JSON.parse(saved);
-                        // 只返回用户名，忽略密码
                         return { username: credentials.username };
                     }
-                    
-                    return null;
-                } catch (error) {
-                    console.error('加载保存的凭证失败:', error);
-                    return null;
-                }
+                } catch (error) {}
+                return null;
             }
             
-            // 登录成功处理函数
+            // 登录成功处理
             function handleLoginSuccess(username, password, rememberMe, userInfo) {
-                // 创建用户资料对象
-                const userProfile = {
-                    username: username,
-                    fullname: userInfo.fullname,
-                    avatar: userInfo.avatar,
-                    loggedIn: true,
-                    loginTime: new Date().toISOString()
-                };
-                
-                // 保存登录状态到localStorage
-                localStorage.setItem('userLoggedIn', 'true');
-                localStorage.setItem('currentUser', JSON.stringify(userProfile));
-                localStorage.setItem('userCredentials', JSON.stringify({
-                    username: username,
-                    fullname: userInfo.fullname,
-                    avatar: userInfo.avatar,
-                    loginTime: userProfile.loginTime
-                }));
-                
-                // 处理记住我功能 - 不再存储明文密码
-                if (rememberMe) {
-                    // 只存储用户名，不存储密码
-                    localStorage.setItem('rememberedUser', username);
-                } else {
-                    localStorage.removeItem('rememberedUser');
-                    localStorage.removeItem('savedCredentials'); // 清理旧的存储方式
+                try {
+                    // 创建简单的用户资料对象
+                    const userProfile = {
+                        id: 'currentUser',
+                        username: username,
+                        fullname: userInfo.fullname,
+                        avatar: userInfo.avatar,
+                        loggedIn: true,
+                        loginTime: new Date().toISOString()
+                    };
+                    
+                    // 安全地存储用户信息
+                    if (typeof localStorage !== 'undefined') {
+                        localStorage.setItem('userLoggedIn', 'true');
+                        localStorage.setItem('currentUser', JSON.stringify(userProfile));
+                        localStorage.setItem('userCredentials', JSON.stringify({
+                            username: username,
+                            fullname: userInfo.fullname,
+                            avatar: userInfo.avatar
+                        }));
+                        
+                        if (rememberMe) {
+                            localStorage.setItem('rememberedUser', username);
+                        } else {
+                            localStorage.removeItem('rememberedUser');
+                        }
+                    }
+                    
+                    // 跳转到用户中心
+                    setTimeout(() => {
+                        window.location.href = 'user_center.html';
+                    }, 500);
+                } catch (error) {
+                    // 静默处理：登录成功处理失败
+                    // 提供更友好的错误提示
+                    alert('登录成功，但在保存用户信息时出现问题。您仍然可以继续使用系统。');
+                    // 确保loginButton存在时才操作
+                    const btn = document.getElementById('login-button');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<span>登录</span><i class="fa fa-arrow-right"></i>';
+                    }
+                    // 即使有错误也尝试跳转
+                    setTimeout(() => {
+                        window.location.href = 'user_center.html';
+                    }, 1000);
                 }
-                
-                // 触发全局用户资料同步
-                if (window.userProfileSync && typeof window.userProfileSync.triggerGlobalUpdate === 'function') {
-                    window.userProfileSync.triggerGlobalUpdate(userProfile);
-                }
-                
-                // 登录成功后跳转到用户中心
-                setTimeout(() => {
-                    window.location.href = 'user_center.html';
-                }, 100);
             }
             
             // 表单提交处理
@@ -284,59 +280,71 @@
             const loginButton = document.getElementById('login-button');
             
             if (loginForm && loginButton) {
-                loginForm.addEventListener('submit', function(e) {
+                loginForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     
-                    // 获取表单数据
                     const username = document.getElementById('username').value;
                     const password = document.getElementById('password').value;
                     const rememberMe = document.getElementById('remember-me').checked;
                     
-                    // 简单的表单验证
                     if (!username || !password) {
                         alert('请输入用户名和密码');
                         return;
                     }
                     
-                    // 模拟登录请求
                     loginButton.disabled = true;
                     loginButton.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>登录中...';
                     
-                    // 模拟用户数据库
-                    const mockUsers = {
-                        'admin': { password: 'admin123', fullname: '管理员', avatar: 'https://picsum.photos/id/1/40/40' },
-                        'user1': { password: 'user123', fullname: '周光泽', avatar: 'https://picsum.photos/id/91/40/40' },
-                        'test': { password: 'test123', fullname: '测试用户', avatar: 'https://picsum.photos/id/64/40/40' }
-                    };
-                    
-                    // 模拟网络延迟
-                    setTimeout(function() {
-                        try {
-                            // 模拟登录验证
-                            const user = mockUsers[username];
+                    try {
+                        // 使用API服务进行登录
+                        if (typeof ApiService !== 'undefined') {
+                            const apiService = new ApiService();
+                            const response = await apiService.login({ username, password });
                             
-                            if (user && user.password === password) {
-                                // 登录成功
-                                handleLoginSuccess(username, password, rememberMe, user);
+                            if (response && response.user) {
+                                // 登录成功，使用API返回的用户信息
+                                handleLoginSuccess(username, password, rememberMe, response.user);
                             } else {
-                                // 登录失败
-                                alert('用户名或密码错误，请重新输入');
+                                alert('登录失败，请检查用户名和密码');
                                 loginButton.disabled = false;
                                 loginButton.innerHTML = '<span>登录</span><i class="fa fa-arrow-right"></i>';
                             }
-                        } catch (error) {
-                            console.error('登录过程发生错误:', error);
-                            alert('登录过程发生错误，请刷新页面重试');
-                            loginButton.disabled = false;
-                            loginButton.innerHTML = '<span>登录</span><i class="fa fa-arrow-right"></i>';
+                        } else {
+                            // 如果API服务不可用，回退到模拟用户登录
+                            const mockUsers = {
+                                'admin': { password: 'admin123', fullname: '管理员', avatar: 'https://picsum.photos/id/1/40/40' },
+                                'user1': { password: 'user123', fullname: '周光泽', avatar: 'https://picsum.photos/id/91/40/40' },
+                                'test': { password: 'test123', fullname: '测试用户', avatar: 'https://picsum.photos/id/64/40/40' }
+                            };
+                            
+                            setTimeout(() => {
+                                try {
+                                    const user = mockUsers[username];
+                                    if (user && user.password === password) {
+                                        handleLoginSuccess(username, password, rememberMe, user);
+                                    } else {
+                                        alert('用户名或密码错误，请重新输入');
+                                        loginButton.disabled = false;
+                                        loginButton.innerHTML = '<span>登录</span><i class="fa fa-arrow-right"></i>';
+                                    }
+                                } catch (error) {
+                                    alert('登录过程发生错误，请刷新页面重试');
+                                    loginButton.disabled = false;
+                                    loginButton.innerHTML = '<span>登录</span><i class="fa fa-arrow-right"></i>';
+                                }
+                            }, 1000);
                         }
-                    }, 1500);
+                    } catch (error) {
+                        console.error('登录错误:', error);
+                        alert('登录失败，请稍后重试');
+                        loginButton.disabled = false;
+                        loginButton.innerHTML = '<span>登录</span><i class="fa fa-arrow-right"></i>';
+                    }
                 });
             }
             
-            // 添加输入框动画效果
-            const inputs = document.querySelectorAll('input');
-            inputs.forEach(input => {
+            // 输入框动画效果
+            document.querySelectorAll('input').forEach(input => {
                 input.addEventListener('focus', function() {
                     if (this.parentElement) {
                         this.parentElement.classList.add('ring-2', 'ring-primary/20', 'rounded-lg');
@@ -351,15 +359,9 @@
             });
             
             // 第三方登录按钮动画
-            const thirdPartyButtons = document.querySelectorAll('.rounded-full');
-            thirdPartyButtons.forEach(button => {
-                button.addEventListener('mouseover', function() {
-                    this.classList.add('scale-110');
-                });
-                
-                button.addEventListener('mouseout', function() {
-                    this.classList.remove('scale-110');
-                });
+            document.querySelectorAll('.rounded-full').forEach(button => {
+                button.addEventListener('mouseover', () => button.classList.add('scale-110'));
+                button.addEventListener('mouseout', () => button.classList.remove('scale-110'));
             });
         });
     </script>

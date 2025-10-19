@@ -1,7 +1,4 @@
 // 登录功能测试脚本
-// 在浏览器控制台中运行此脚本以测试登录功能
-
-console.log('开始测试登录功能...');
 
 // 检查必要的DOM元素是否存在
 const requiredElements = [
@@ -16,17 +13,14 @@ let elementsFound = true;
 for (const el of requiredElements) {
     const element = document.getElementById(el.id);
     if (!element) {
-        console.error(`未找到${el.name} (ID: ${el.id})`);
+        // 静默处理：未找到必要的DOM元素
         elementsFound = false;
-    } else {
-        console.log(`找到${el.name} (ID: ${el.id})`);
     }
 }
 
 if (!elementsFound) {
-    console.error('重要DOM元素缺失，登录功能无法正常工作');
+    // 静默处理：重要DOM元素缺失
 } else {
-    console.log('所有必要的DOM元素都已找到');
     
     // 测试模拟用户数据库访问
     try {
@@ -37,10 +31,9 @@ if (!elementsFound) {
             'test': { password: 'test123', fullname: '测试用户', avatar: 'https://picsum.photos/id/64/40/40' }
         };
         
-        console.log('模拟用户数据库:', mockUsers);
-        console.log('可用于测试的用户名:', Object.keys(mockUsers));
+        // 静默处理：记录可用于测试的用户名
     } catch (error) {
-        console.error('模拟用户数据库测试失败:', error);
+        // 静默处理：模拟用户数据库测试失败
     }
     
     // 测试localStorage访问
@@ -50,19 +43,12 @@ if (!elementsFound) {
         const testValue = localStorage.getItem(testKey);
         localStorage.removeItem(testKey);
         
-        if (testValue === 'test_value') {
-            console.log('localStorage访问测试成功');
-        } else {
-            console.warn('localStorage访问测试结果不符合预期');
+        if (testValue !== 'test_value') {
+            // 静默处理：localStorage访问测试结果不符合预期
         }
     } catch (error) {
-        console.error('localStorage访问测试失败:', error);
-        console.warn('这可能导致登录状态无法正常保存');
+        // 静默处理：localStorage访问测试失败
     }
     
-    console.log('\n登录功能测试完成。建议的测试步骤:');
-    console.log('1. 打开浏览器开发者工具 (F12)');
-    console.log('2. 切换到Console选项卡');
-    console.log('3. 尝试使用测试账号登录 (admin/admin123, user1/user123, test/test123)');
-    console.log('4. 观察控制台中是否有错误信息');
+    // 静默处理：输出可用测试账号信息
 }

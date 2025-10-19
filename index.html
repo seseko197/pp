@@ -6,7 +6,9 @@
     <title>抑郁症分析系统 - 首页</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <script src="sync_user_profile.js"></script>
+    <!-- 核心同步系统 - 全新统一的同步架构 -->
+    <script src="core_sync_init.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -39,23 +41,10 @@
         }
     </script>
     <style>
-        /* 基础样式定义 */
+        /* 必要的自定义样式 */
         .content-auto { content-visibility: auto; }
         .text-shadow { text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08); }
         .text-shadow-lg { text-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-        .hover-scale { 
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-        }
-        .hover-scale:hover { 
-            transform: scale(1.03); 
-        }
-        .card-hover {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .card-hover:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
         .gradient-mask-b {
             mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
             -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
@@ -65,32 +54,12 @@
             -webkit-backdrop-filter: blur(8px);
         }
         /* 平滑滚动 */
-        html {
-            scroll-behavior: smooth;
-        }
+        html { scroll-behavior: smooth; }
         /* 自定义滚动条 */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        /* 加载动画 */
-        .loader {
-            border-top-color: #3b82f6;
-            animation: spinner 0.8s linear infinite;
-        }
-        @keyframes spinner {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800 overflow-x-hidden">
@@ -149,7 +118,7 @@
                         借助先进的机器学习算法和专业的心理健康模型，帮助您了解自身心理状态，早期发现潜在风险，及时干预和治疗。
                     </p>
                     <div class="flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
-                        <a href="login.html" class="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white px-8 py-3.5 rounded-full font-semibold transition-all shadow-xl shadow-primary/20 hover-scale text-center">
+                        <a href="#" id="start-analysis-btn" class="bg-gradient-to-r from-primary to-secondary hover:opacity-90 text-white px-8 py-3.5 rounded-full font-semibold transition-all shadow-xl shadow-primary/20 hover-scale text-center">
                             <i class="fa fa-rocket mr-2"></i> 开始分析之旅
                         </a>
                         <a href="#features" class="bg-white hover:bg-gray-50 text-dark px-8 py-3.5 rounded-full font-semibold transition-all shadow-lg hover-scale border border-gray-100 text-center">
@@ -688,7 +657,7 @@
             }
             return null;
         } catch (error) {
-            console.error('获取用户信息失败:', error);
+            // 静默处理：获取用户信息失败
             return null;
         }
     }
@@ -698,12 +667,12 @@
         const user = getLoggedInUser();
         
         // 更新导航栏的登录按钮
-        const desktopLoginButton = document.querySelector('.hidden.md\:flex a[href="login.html"]');
+        const desktopLoginButton = document.querySelector('.hidden.md\\:flex a[href="login.html"]');
         const mobileLoginButton = document.querySelector('#mobile-menu a[href="login.html"]');
         const startAnalysisButton = document.querySelector('a:has(.fa-rocket)');
         
         if (user) {
-            console.log('用户已登录，更新导航栏显示');
+            // 用户已登录，更新导航栏显示
             
             // 更新桌面端导航栏
             if (desktopLoginButton) {
@@ -751,7 +720,7 @@
             }
             
         } else {
-            console.log('用户未登录，保持默认导航栏显示');
+            // 用户未登录，保持默认导航栏显示
             
             // 确保按钮链接到登录页面
             if (startAnalysisButton) {
@@ -818,6 +787,25 @@
         
         // 初始触发一次动画
         animateOnScroll();
+        
+        // 检查用户登录状态
+        function checkUserLoggedIn() {
+            // 从localStorage检查是否有用户登录信息
+            const userInfo = localStorage.getItem('userInfo');
+            return userInfo !== null && userInfo !== 'undefined';
+        }
+        
+        // "开始分析之旅"按钮点击事件
+        document.getElementById('start-analysis-btn').addEventListener('click', function(event) {
+            event.preventDefault();
+            if (checkUserLoggedIn()) {
+                // 已登录，跳转到个人页面
+                window.location.href = 'user_center.html';
+            } else {
+                // 未登录，跳转到登录页面
+                window.location.href = 'login.html';
+            }
+        });
     </script>
 </body>
 </html>

@@ -11,7 +11,7 @@ class UltimateSyncFix {
     } 
 
     init() { 
-        console.log('🚀 终极同步修复工具启动 v' + this.version); 
+        // 静默处理：终极同步修复工具启动 v' + this.version
         
         // 监听所有可能的同步事件 
         this.setupEventListeners(); 
@@ -32,20 +32,14 @@ class UltimateSyncFix {
         // 页面可见性变化
         document.addEventListener('visibilitychange', () => { 
             if (!document.hidden) { 
-                // 仅在开发环境输出日志
-        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-            console.log('📱 页面变为可见，触发同步检查');
-        }
+                // 静默处理：页面变为可见，触发同步检查
                 this.syncAllPages();
             }
         }); 
 
         // 页面聚焦事件
         window.addEventListener('focus', () => { 
-            // 仅在开发环境输出日志
-        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-            console.log('🎯 页面获得焦点，触发同步检查');
-        }
+            // 静默处理：页面获得焦点，触发同步检查
             this.syncAllPages();
         }); 
 
@@ -56,10 +50,7 @@ class UltimateSyncFix {
     } 
 
     handleStorageChange(event) {
-        // 仅在开发环境输出日志
-        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-            console.log('🔄 检测到存储变化:', event.key);
-        }
+        // 静默处理：检测到存储变化
         
         switch (event.key) { 
             case this.syncKeys.profile: 
@@ -76,17 +67,14 @@ class UltimateSyncFix {
     } 
 
     async syncAllPages() { 
-        // 仅在开发环境输出日志
-        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-            console.log('🔄 开始全页面同步');
-        }
+        // 静默处理：开始全页面同步
         
         try { 
             await this.syncUserProfile(); 
             await this.syncAnalysisHistory(); 
             this.updateSyncTimestamp(); 
         } catch (error) { 
-            console.error('同步失败:', error); 
+            // 静默处理：同步失败
         }
     } 
 
@@ -99,33 +87,24 @@ class UltimateSyncFix {
             if (profileData) { 
                 const profile = JSON.parse(profileData); 
                 await this.updateProfileDisplay(profile); 
-                // 仅在开发环境输出日志
-                if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-                    console.log('✅ 用户资料同步完成');
-                }
+                // 静默处理：用户资料同步完成
                 return true; 
             } 
 
-            // 方法2: 从IndexedDB获取 
+            // 方法2: 通过localDB接口获取（内部已使用localStorage）
             if (window.localDB) { 
                 const profile = await window.localDB.getUserProfile(); 
                 if (profile) { 
                     await this.updateProfileDisplay(profile); 
-                    // 仅在开发环境输出日志
-                if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-                    console.log('✅ 从IndexedDB同步用户资料完成');
-                }
+                    // 静默处理：通过localDB同步用户资料完成
                     return true; 
                 } 
             } 
 
-            // 仅在开发环境输出日志
-                if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-                    console.log('⚠️ 未找到用户资料数据');
-                }
+            // 静默处理：未找到用户资料数据
             return false; 
         } catch (error) { 
-            console.error('用户资料同步失败:', error); 
+            // 静默处理：用户资料同步失败
             return false; 
         }
     } 
@@ -134,40 +113,19 @@ class UltimateSyncFix {
         try { 
             if (typeof syncAnalysisHistory === 'function') { 
                 await syncAnalysisHistory(); 
-                // 仅在开发环境输出日志
-                if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-                    console.log('✅ 分析历史同步完成');
-                }
+                // 静默处理：分析历史同步完成
             } 
         } catch (error) { 
-            console.error('分析历史同步失败:', error); 
+            // 静默处理：分析历史同步失败
         }
     } 
 
     async updateProfileDisplay(profile) { 
         if (!profile) return; 
 
-        console.log('🎨 更新页面显示:', profile.fullname); 
+        // 静默处理：更新页面显示 
 
-        // 更新所有头像元素 
-        const avatarSelectors = [ 
-            'img[src*="picsum"]', 
-            '#user-avatar', 
-            '#preview-avatar', 
-            '#nav-avatar-desktop', 
-            '#nav-avatar-mobile', 
-            '.avatar', 
-            '[class*="avatar"]' 
-        ]; 
-
-        avatarSelectors.forEach(selector => { 
-            document.querySelectorAll(selector).forEach(img => { 
-                if (profile.avatar && img.tagName === 'IMG') { 
-                    img.src = profile.avatar; 
-                    img.alt = profile.fullname || '用户头像'; 
-                } 
-            }); 
-        }); 
+        // 头像使用默认头像，不再从profile更新 
 
         // 更新所有姓名元素 - 使用精确的选择器以避免误替换
         const nameSelectors = [ 
@@ -189,13 +147,9 @@ class UltimateSyncFix {
                     !element.textContent.includes('数据类型') && 
                     !element.textContent.includes('参考标准')
                 ) { 
-                    // 记录更新前的内容，便于调试
+                    // 静默处理：更新元素内容
                     const oldText = element.textContent;
                     element.textContent = profile.fullname;
-                    // 只有当内容实际发生变化时才记录日志
-                    if (oldText !== profile.fullname && typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-                        console.log(`🔄 已更新元素: ${selector}, 从 "${oldText}" 到 "${profile.fullname}"`);
-                    }
                 } 
             }); 
         }); 
@@ -220,13 +174,13 @@ class UltimateSyncFix {
     } 
 
     triggerGlobalSync(profileData = null) {
-        console.log('🌍 触发全局同步');
+        // 静默处理：触发全局同步
         
         const timestamp = Date.now();
         
         // 方法1: 使用新系统
         if (profileData) {
-            console.log('📤 保存用户资料:', profileData.fullname);
+            // 静默处理：保存用户资料
             localStorage.setItem(this.syncKeys.profile, JSON.stringify(profileData));
             // 立即更新当前页面的显示
             this.updateProfileDisplay(profileData);
@@ -237,10 +191,7 @@ class UltimateSyncFix {
     }
 
     setupHeartbeat() {
-        // 仅在开发环境输出日志
-        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-            console.log('💓 设置心跳检测系统');
-        }
+        // 静默处理：设置心跳检测系统
         
         // 从10秒改为60秒
         setInterval(() => {
@@ -253,16 +204,13 @@ class UltimateSyncFix {
             try {
                 localStorage.setItem('ultimate_sync_heartbeat', JSON.stringify(heartbeat));
             } catch (error) {
-                console.error('心跳检测失败:', error);
+                // 静默处理：心跳检测失败
             }
         }, 60000);
     }
 
     checkForUpdates() {
-        // 仅在开发环境输出日志
-        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-            console.log('🔍 检查更新...');
-        }
+        // 静默处理：检查更新...
         
         try { 
             // 检查时间戳是否更新
@@ -271,28 +219,22 @@ class UltimateSyncFix {
             
             // 如果超过30秒没有同步，强制同步（从10秒改为30秒）
             if (!lastSync || (currentTimestamp - parseInt(lastSync)) > 30000) { 
-                // 仅在开发环境输出日志
-                    if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-                        console.log('⏱️ 同步时间戳过期，触发强制同步');
-                    }
+                // 静默处理：同步时间戳过期，触发强制同步
                 this.syncAllPages(); 
             } 
         } catch (error) { 
-            console.error('更新检查失败:', error); 
+            // 静默处理：更新检查失败
         }
     }
 
     legacySync() { 
-        // 仅在开发环境输出日志
-        if (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost') {
-            console.log('🔄 兼容旧系统同步');
-        }
+        // 静默处理：兼容旧系统同步
         
         try { 
             // 处理旧系统的同步
             this.syncUserProfile(); 
         } catch (error) { 
-            console.error('旧系统同步失败:', error); 
+            // 静默处理：旧系统同步失败
         }
     }
 }
@@ -300,7 +242,7 @@ class UltimateSyncFix {
 // 初始化同步系统
 if (!window.ultimateSyncSystem) {
     window.ultimateSyncSystem = new UltimateSyncFix();
-    console.log('✅ 终极同步系统已成功初始化');
+    // 静默处理：终极同步系统已成功初始化
 } else {
-    console.log('⚠️ 终极同步系统已存在，跳过初始化');
+    // 静默处理：终极同步系统已存在，跳过初始化
 }

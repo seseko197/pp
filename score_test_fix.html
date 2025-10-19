@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最高健康得分测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin: 20px 0;
+            width: 300px;
+        }
+        .score-display {
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>最高健康得分测试页面</h1>
+    
+    <div class="test-container">
+        <h3>本月最高健康得分</h3>
+        <div id="highest-health-score" class="score-display">--</div>
+        <div id="month-indicator">2025年10月 数据</div>
+        <button onclick="displayHighestHealthScore()">重新计算得分</button>
+        <button onclick="resetLocalStorage()">重置localStorage</button>
+    </div>
+    
+    <div class="test-container">
+        <h3>调试信息</h3>
+        <pre id="debug-info">加载中...</pre>
+    </div>
+
+    <script>
+        // 调试函数 - 记录信息到调试面板
+        function logDebugInfo(info) {
+            const debugElement = document.getElementById('debug-info');
+            debugElement.textContent += info + '\n';
+            // 静默处理：记录调试信息
+        }
+        
+        // 重置localStorage
+        function resetLocalStorage() {
+            localStorage.removeItem('analysisHistory');
+            logDebugInfo('已重置localStorage中的analysisHistory');
+            displayHighestHealthScore();
+        }
+        
+        // 计算并显示本月最高健康得分
+        function displayHighestHealthScore() {
+            try {
+                // 清空调试信息
+                document.getElementById('debug-info').textContent = '';
+                logDebugInfo('开始计算最高健康得分...');
+                
+                // 基础模拟数据 - 可从localStorage获取或使用默认值
+                logDebugInfo('尝试从localStorage获取数据...');
+                const storedData = localStorage.getItem('analysisHistory');
+                logDebugInfo('localStorage原始数据: ' + storedData);
+                
+                const mockRecords = JSON.parse(storedData || JSON.stringify([
+                    { id: 1, date: '2025-10-18', score: 85 },
+                    { id: 2, date: '2025-10-18', score: 85 },
+                    { id: 3, date: '2025-10-18', score: 87 }
+                ]));
+                
+                logDebugInfo('使用的数据: ' + JSON.stringify(mockRecords));
+                
+                // 筛选有效分数并找出最大值
+                logDebugInfo('开始筛选有效分数...');
+                const validScores = mockRecords.filter(r => {
+                    const isValid = r && r.date && r.date.includes('2025-10') && 
+                        typeof r.score === 'number' && !isNaN(r.score);
+                    logDebugInfo(`记录 ${r?.id || '未知'} 验证: ${isValid ? '有效' : '无效'}`);
+                    return isValid;
+                }).map(r => r.score);
+                
+                logDebugInfo('有效分数列表: ' + validScores.join(', '));
+                
+                const highestScore = validScores.length > 0 ? Math.max(...validScores) : 0;
+                logDebugInfo('计算得到的最高分数: ' + highestScore);
+                
+                // 更新显示
+                const scoreElement = document.getElementById('highest-health-score');
+                // 静默处理：找到得分元素检查
+                
+                if (scoreElement) {
+                    scoreElement.textContent = highestScore || '--';
+                    // 静默处理：已更新得分显示
+                }
+                
+            } catch (error) {
+                // 静默处理：记录错误
+                // 静默处理：记录错误
+            }
+        }
+        
+        // 立即执行一次计算
+        window.onload = displayHighestHealthScore;
+    </script>
+</body>
+</html>

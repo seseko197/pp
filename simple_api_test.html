@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f4f4f4;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow: auto;
+        }
+        .success {
+            color: #2e7d32;
+            background-color: #e8f5e9;
+        }
+        .error {
+            color: #d32f2f;
+            background-color: #ffebee;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .test-item {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>简单API连接测试</h1>
+    
+    <div class="test-item">
+        <h2>1. 服务器健康检查</h2>
+        <button id="test-health">测试健康检查</button>
+        <div id="health-result" class="result"></div>
+    </div>
+    
+    <div class="test-item">
+        <h2>2. 测试用户API</h2>
+        <button id="test-user-api">测试用户API</button>
+        <div id="user-api-result" class="result"></div>
+    </div>
+    
+    <script>
+        // 辅助函数 - 显示结果
+        function showResult(elementId, content, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = content;
+            element.className = 'result ' + (isError ? 'error' : 'success');
+        }
+        
+        // 测试健康检查
+        document.getElementById('test-health').addEventListener('click', async function() {
+            try {
+                showResult('health-result', '正在连接服务器...');
+                const response = await fetch('http://localhost:50000/api/health');
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('health-result', JSON.stringify(data, null, 2));
+                } else {
+                    showResult('health-result', `服务器返回错误: HTTP ${response.status}`, true);
+                }
+            } catch (error) {
+                showResult('health-result', `连接错误: ${error.message}\n\n请确认：\n1. 后端服务器是否正在运行\n2. 服务器端口是否为50000\n3. 网络连接是否正常`, true);
+            }
+        });
+        
+        // 测试用户API
+        document.getElementById('test-user-api').addEventListener('click', async function() {
+            try {
+                showResult('user-api-result', '正在测试用户API...');
+                const response = await fetch('http://localhost:50000/api/users/profile');
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('user-api-result', JSON.stringify(data, null, 2));
+                } else {
+                    showResult('user-api-result', `用户API返回错误: HTTP ${response.status}`, true);
+                }
+            } catch (error) {
+                showResult('user-api-result', `连接错误: ${error.message}`, true);
+            }
+        });
+        
+        // 页面加载时自动运行健康检查
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.getElementById('test-health').click();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

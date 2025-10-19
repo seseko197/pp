@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; }
+        input, button { padding: 10px; margin: 10px 0; width: 100%; box-sizing: border-box; }
+        button { background-color: #3b82f6; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #2563eb; }
+        #result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>登录测试</h1>
+    <div>
+        <label>用户名:</label>
+        <input type="text" id="username" value="admin">
+        <label>密码:</label>
+        <input type="password" id="password" value="admin123">
+        <button id="login">登录</button>
+        <button id="clear">清除存储</button>
+    </div>
+    <div id="result"></div>
+
+    <script>
+        // 简单的登录测试函数
+        function testLogin(username, password) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '正在测试登录...';
+            
+            // 模拟用户数据库
+            const mockUsers = {
+                'admin': { password: 'admin123', fullname: '管理员' },
+                'user1': { password: 'user123', fullname: '周光泽' },
+                'test': { password: 'test123', fullname: '测试用户' }
+            };
+            
+            // 检查用户
+            const user = mockUsers[username];
+            if (user && user.password === password) {
+                try {
+                    // 模拟成功登录后的存储操作
+                    const userProfile = {
+                        id: 'currentUser',
+                        username: username,
+                        fullname: user.fullname,
+                        loggedIn: true,
+                        loginTime: new Date().toISOString()
+                    };
+                    
+                    localStorage.setItem('userLoggedIn', 'true');
+                    localStorage.setItem('currentUser', JSON.stringify(userProfile));
+                    
+                    resultDiv.innerHTML = '<span style="color: green;">登录测试成功!</span><br>' +
+                                        '用户名: ' + username + '<br>' +
+                                        '用户资料已保存到localStorage';
+                } catch (error) {
+                    resultDiv.innerHTML = '<span style="color: red;">存储操作失败:</span> ' + error.message;
+                }
+            } else {
+                resultDiv.innerHTML = '<span style="color: red;">用户名或密码错误</span>';
+            }
+        }
+        
+        // 清除测试数据
+        function clearStorage() {
+            try {
+                localStorage.removeItem('userLoggedIn');
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('userCredentials');
+                document.getElementById('result').innerHTML = '<span style="color: blue;">存储已清除</span>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<span style="color: red;">清除存储失败:</span> ' + error.message;
+            }
+        }
+        
+        // 添加事件监听
+        document.getElementById('login').addEventListener('click', function() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            testLogin(username, password);
+        });
+        
+        document.getElementById('clear').addEventListener('click', clearStorage);
+        
+        // 初始检查localStorage状态
+        function checkStorage() {
+            const result = [];
+            if (localStorage.getItem('userLoggedIn')) result.push('userLoggedIn: ' + localStorage.getItem('userLoggedIn'));
+            if (localStorage.getItem('currentUser')) result.push('currentUser: 存在');
+            if (localStorage.getItem('userCredentials')) result.push('userCredentials: 存在');
+            
+            if (result.length > 0) {
+                document.getElementById('result').innerHTML = '当前存储状态:<br>' + result.join('<br>');
+            }
+        }
+        
+        checkStorage();
+    </script>
+</body>
+</html>

@@ -8,8 +8,9 @@
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
     <script src="localdb.js"></script>
-    <script src="sync_user_profile.js"></script>
-    <script src="ultimate_sync_fix.js"></script>
+    <!-- 核心同步系统 - 全新统一的同步架构 -->
+    <script src="core_sync_init.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -54,10 +55,10 @@
                 <a href="analysis.html" class="text-primary font-medium">分析中心</a>
                 <a href="user_center.html" class="text-gray-600 hover:text-primary transition-colors">用户中心</a>
                 <div class="flex items-center space-x-2">
-                        <img src="https://picsum.photos/id/91/40/40" alt="用户头像" id="nav-avatar-desktop" class="w-10 h-10 rounded-full object-cover border-2 border-primary">
+                        <img src="m.jpg" alt="用户头像" id="nav-avatar-desktop" class="w-10 h-10 rounded-full object-cover border-2 border-primary">
                         <span id="nav-username-desktop" class="text-gray-700 font-medium">周光泽</span>
                     </div>
-                <a href="login.html" class="text-gray-600 hover:text-danger transition-colors">
+                <a href="login.html" class="text-gray-600 hover:text-danger transition-colors" id="desktop-logout-button">
                     <i class="fa fa-sign-out"></i> 退出
                 </a>
             </div>
@@ -72,16 +73,71 @@
             <a href="analysis.html" class="block py-2 text-primary font-medium">分析中心</a>
             <a href="user_center.html" class="block py-2 text-gray-600 hover:text-primary">用户中心</a>
             <div class="py-2 flex items-center space-x-2 border-t border-gray-100">
-                    <img src="https://picsum.photos/id/91/40/40" alt="用户头像" id="nav-avatar-mobile" class="w-8 h-8 rounded-full object-cover border-2 border-primary">
+                    <img src="m.jpg" alt="用户头像" id="nav-avatar-mobile" class="w-8 h-8 rounded-full object-cover border-2 border-primary">
                         <span id="nav-username-mobile" class="text-gray-700 font-medium">周光泽</span>
                 </div>
-            <a href="login.html" class="block py-2 text-danger font-medium border-t border-gray-100">
+            <a href="login.html" class="block py-2 text-danger font-medium border-t border-gray-100" id="mobile-logout-button">
                 <i class="fa fa-sign-out mr-2"></i> 退出
             </a>
         </div>
     </nav>
 
     <main class="container mx-auto px-4 pt-24 pb-16">
+    
+    <script>
+        // 实现退出功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 桌面端退出按钮
+            const desktopLogoutButton = document.getElementById('desktop-logout-button');
+            if (desktopLogoutButton) {
+                desktopLogoutButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // 使用API服务注销
+                    if (typeof ApiService !== 'undefined') {
+                        const apiService = new ApiService();
+                        apiService.logout();
+                    }
+                    // 清除所有登录相关的localStorage数据
+                    localStorage.removeItem('userCredentials');
+                    localStorage.removeItem('userLoggedIn');
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('savedCredentials');
+                    localStorage.removeItem('authToken');
+                    
+                    // 显示退出成功提示
+                    alert('退出成功');
+                    
+                    // 跳转到登录页
+                    window.location.href = 'login.html';
+                });
+            }
+            
+            // 移动端退出按钮
+            const mobileLogoutButton = document.getElementById('mobile-logout-button');
+            if (mobileLogoutButton) {
+                mobileLogoutButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // 使用API服务注销
+                    if (typeof ApiService !== 'undefined') {
+                        const apiService = new ApiService();
+                        apiService.logout();
+                    }
+                    // 清除所有登录相关的localStorage数据
+                    localStorage.removeItem('userCredentials');
+                    localStorage.removeItem('userLoggedIn');
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('savedCredentials');
+                    localStorage.removeItem('authToken');
+                    
+                    // 显示退出成功提示
+                    alert('退出成功');
+                    
+                    // 跳转到登录页
+                    window.location.href = 'login.html';
+                });
+            }
+        });
+    </script>
         <div class="mb-8">
             <h1 class="text-2xl md:text-3xl font-bold text-dark mb-2">分析中心</h1>
             <p class="text-gray-500">上传心电脑电数据，获取专业的心理健康评估</p>
@@ -307,6 +363,10 @@
                         <button id="new-analysis-btn" class="flex-1 bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
                             <i class="fa fa-plus mr-2"></i>
                             <span>新建分析</span>
+                        </button>
+                        <button id="save-result-btn" class="flex-1 bg-success hover:bg-success/90 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center">
+                            <i class="fa fa-save mr-2"></i>
+                            <span>保存结果</span>
                         </button>
                         <button id="view-history-btn" class="flex-1 bg-white hover:bg-gray-50 text-primary border border-primary px-4 py-3 rounded-lg transition-colors duration-200 flex items-center justify-center">
                             <i class="fa fa-history mr-2"></i>
@@ -581,15 +641,15 @@
                 stepIndicators[1].nextElementSibling.classList.add('bg-primary');
                 
                 // 根据选择的模型更新结果数据
-                updateAnalysisResults(selectedModel).catch(error => {
-                    console.error('分析结果更新失败:', error);
-                    // 即使发生错误，也确保初始化雷达图
-                    try {
-                        initPhysiologicalChart();
-                    } catch (chartError) {
-                        console.error('雷达图初始化失败:', chartError);
-                    }
-                });
+                    updateAnalysisResults(selectedModel).catch(error => {
+                        // 静默处理错误
+                        // 即使发生错误，也确保初始化雷达图
+                        try {
+                            initPhysiologicalChart();
+                        } catch (chartError) {
+                            // 静默处理雷达图初始化错误
+                        }
+                    });
                 
             }, 2000);
         });
@@ -662,89 +722,97 @@
                 createdAt: new Date().toISOString()
             };
             
-            // 首先保存到IndexedDB，确保数据持久化存储
-            try {
-                if (window.localDB) {
-                    await window.localDB.addAnalysisRecord(resultData);
-                    console.log('✅ 分析记录已保存到IndexedDB');
-                    
-                    // 同步到localStorage，用于快速访问和跨页面通信
-                    // 先从IndexedDB获取最新的完整历史记录
-                    try {
-                        const allHistory = await window.localDB.getAllAnalysisHistory();
-                        // 限制历史记录数量，最多保存100条
-                        const limitedHistory = allHistory.slice(0, 100);
-                        
-                        // 保存到localStorage用于快速访问
-                        localStorage.setItem('analysisHistory', JSON.stringify(limitedHistory));
-                        console.log('✅ 分析历史已同步到localStorage');
-                    } catch (error) {
-                        console.error('同步到localStorage失败:', error);
-                        // 降级方案：仅保存当前新增的记录
-                        let historyRecords = JSON.parse(localStorage.getItem('analysisHistory')) || [];
-                        historyRecords.unshift(resultData);
-                        if (historyRecords.length > 100) {
-                            historyRecords = historyRecords.slice(0, 100);
-                        }
-                        localStorage.setItem('analysisHistory', JSON.stringify(historyRecords));
-                    }
-                    
-                    // 使用统一的同步机制，避免多个系统同时触发
-                    // 1. 首先尝试使用ultimateSyncSystem（推荐的同步机制）
-                    if (window.ultimateSyncSystem && typeof window.ultimateSyncSystem.triggerGlobalSync === 'function') {
-                        console.log('🌍 使用终极同步系统触发全局更新');
-                        window.ultimateSyncSystem.triggerGlobalSync();
-                    } else {
-                        // 2. 如果没有终极同步系统，才触发自定义事件
-                        const event = new CustomEvent('analysisHistoryUpdated', {
-                            detail: { 
-                                message: '分析历史已更新', 
-                                timestamp: Date.now(),
-                                newRecord: resultData
-                            }
-                        });
-                        window.dispatchEvent(event);
-                        console.log('🔄 已触发analysisHistoryUpdated自定义事件');
-                    }
-                } else {
-                    console.warn('⚠️ localDB未定义，使用localStorage作为备选存储');
-                    
-                    // 仅使用localStorage存储
-                    let historyRecords = JSON.parse(localStorage.getItem('analysisHistory')) || [];
-                    historyRecords.unshift(resultData);
-                    
-                    if (historyRecords.length > 100) {
-                        historyRecords = historyRecords.slice(0, 100);
-                    }
-                    
-                    localStorage.setItem('analysisHistory', JSON.stringify(historyRecords));
-                    
-                    // 触发同步事件
-                    const event = new CustomEvent('analysisHistoryUpdated', {
-                        detail: { message: '分析历史已更新', timestamp: Date.now() }
-                    });
-                    window.dispatchEvent(event);
-                }
-            } catch (error) {
-                console.error('❌ 保存分析记录失败:', error);
-                
-                // 发生错误时也尝试触发同步事件
+            // 保存分析结果到历史记录 - 修复后的保存逻辑
+            async function saveAnalysisResult() {
                 try {
-                    const event = new CustomEvent('analysisHistoryUpdated', {
-                        detail: { message: '分析历史已更新', timestamp: Date.now() }
-                    });
-                    window.dispatchEvent(event);
-                } catch (eventError) {
-                    console.error('❌ 触发同步事件失败:', eventError);
+                    let saved = false;
+                    console.log('[AnalysisCenter] 开始保存分析结果...');
+                    
+                    // 优先使用核心同步系统
+                    if (window.coreSyncSystem && typeof window.coreSyncSystem.addAnalysisRecord === 'function') {
+                        console.log('[AnalysisCenter] 使用核心同步系统保存记录');
+                        try {
+                            await window.coreSyncSystem.addAnalysisRecord(resultData);
+                            saved = true;
+                        } catch (coreError) {
+                            console.error('[AnalysisCenter] 核心同步系统保存失败:', coreError);
+                        }
+                    }
+                    
+                    // 降级方案1：使用同步桥接器
+                    if (!saved && window.syncBridge && typeof window.syncBridge.onAnalysisRecordAdded === 'function') {
+                        console.log('[AnalysisCenter] 使用同步桥接器保存记录');
+                        try {
+                            await window.syncBridge.onAnalysisRecordAdded(resultData);
+                            saved = true;
+                        } catch (bridgeError) {
+                            console.error('[AnalysisCenter] 同步桥接器保存失败:', bridgeError);
+                        }
+                    }
+                    
+                    // 降级方案2：使用localDB
+                    if (!saved && window.localDB && typeof window.localDB.addAnalysisRecord === 'function') {
+                        console.log('[AnalysisCenter] 使用localDB保存记录');
+                        try {
+                            await window.localDB.addAnalysisRecord(resultData);
+                            saved = true;
+                        } catch (dbError) {
+                            console.error('[AnalysisCenter] localDB保存失败:', dbError);
+                        }
+                    }
+                    
+                    // 最终降级方案：直接使用localStorage
+                    if (!saved) {
+                        console.log('[AnalysisCenter] 使用localStorage保存记录');
+                        try {
+                            let historyRecords = JSON.parse(localStorage.getItem('analysisHistory') || '[]');
+                            historyRecords.unshift(resultData);
+                            
+                            if (historyRecords.length > 100) {
+                                historyRecords = historyRecords.slice(0, 100);
+                            }
+                            
+                            localStorage.setItem('analysisHistory', JSON.stringify(historyRecords));
+                            saved = true;
+                            console.log('[AnalysisCenter] 成功保存到localStorage，历史记录总数:', historyRecords.length);
+                        } catch (storageError) {
+                            console.error('[AnalysisCenter] localStorage保存失败:', storageError);
+                        }
+                    }
+                    
+                    // 触发分析历史更新事件
+                    if (saved) {
+                        console.log('[AnalysisCenter] 分析结果保存成功');
+                        try {
+                            const event = new CustomEvent('analysisHistoryUpdated', {
+                                detail: { 
+                                    message: '分析历史已更新', 
+                                    timestamp: Date.now(),
+                                    newRecord: resultData
+                                }
+                            });
+                            window.dispatchEvent(event);
+                            console.log('[AnalysisCenter] 已触发分析历史更新事件');
+                        } catch (eventError) {
+                            console.error('[AnalysisCenter] 触发事件失败:', eventError);
+                        }
+                    }
+                    
+                    return saved;
+                } catch (error) {
+                    console.error('[AnalysisCenter] 保存分析结果时发生异常:', error);
+                    return false;
                 }
             }
+            
+            // 执行保存
+            await saveAnalysisResult();
             
             // 初始化生理指标雷达图
             try {
                 initPhysiologicalChart();
-                console.log('📊 生理指标雷达图已初始化');
             } catch (chartError) {
-                console.error('❌ 雷达图初始化失败:', chartError);
+                // 静默处理雷达图初始化错误
             }
         }
         
@@ -768,23 +836,151 @@
             stepIndicators[0].querySelector('span').classList.remove('text-gray-500');
             stepIndicators[0].querySelector('span').classList.add('text-primary', 'font-medium');
             stepIndicators[0].nextElementSibling.classList.remove('bg-gray-200');
-            stepIndicators[0].nextElementSibling.classList.add('bg-primary');
-            stepIndicators[1].querySelector('div').classList.remove('bg-primary', 'text-white');
-            stepIndicators[1].querySelector('div').classList.add('bg-gray-200', 'text-gray-500');
-            stepIndicators[1].querySelector('span').classList.remove('text-primary', 'font-medium');
-            stepIndicators[1].querySelector('span').classList.add('text-gray-500');
-            stepIndicators[1].nextElementSibling.classList.remove('bg-primary');
-            stepIndicators[1].nextElementSibling.classList.add('bg-gray-200');
-            stepIndicators[2].querySelector('div').classList.remove('bg-primary', 'text-white');
-            stepIndicators[2].querySelector('div').classList.add('bg-gray-200', 'text-gray-500');
-            stepIndicators[2].querySelector('span').classList.remove('text-primary', 'font-medium');
-            stepIndicators[2].querySelector('span').classList.add('text-gray-500');
         });
         
-        // 查看历史按钮点击事件
+        // 保存结果按钮点击事件
+        document.getElementById('save-result-btn').addEventListener('click', async function() {
+            const btn = this;
+            const originalText = btn.innerHTML;
+            
+            // 禁用按钮防止重复点击
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i>保存中...';
+            
+            try {
+                console.log('[AnalysisCenter] 开始保存分析结果（手动保存）');
+                
+                // 获取当前显示的分析结果数据
+                const date = document.querySelector('#analysis-result-card .text-xl.font-bold.text-dark.mb-2').textContent;
+                const modelName = document.querySelector('#analysis-result-card .text-2xl.font-bold.text-dark.mb-2').textContent;
+                const healthIndex = parseInt(document.querySelector('#analysis-result-card .text-4xl.font-bold.text-primary.mb-2').textContent);
+                const confidenceText = document.querySelector('#analysis-result-card .text-sm.text-gray-500').textContent;
+                const confidence = parseInt(confidenceText.match(/\d+/)[0]);
+                
+                // 获取详细指标
+                const detailItems = document.querySelectorAll('#analysis-result-card .flex.justify-between.mb-2');
+                const details = {};
+                
+                detailItems.forEach(item => {
+                    const label = item.querySelector('span:first-child').textContent;
+                    const value = parseInt(item.querySelector('span:last-child').textContent.match(/\d+/)[0]);
+                    
+                    // 统一格式，保持与updateAnalysisResults中的格式一致
+                    details[label] = value;
+                });
+                
+                // 获取健康建议
+                const advice = document.querySelector('.bg-blue-50.border-l-4.border-primary.p-4.rounded p:first-child').textContent;
+                
+                // 创建分析结果对象 - 确保格式统一
+                const resultData = {
+                    date: date,
+                    model: modelName,
+                    healthIndex: healthIndex,
+                    confidence: confidence + '%',
+                    details: details,
+                    advice: advice,
+                    timestamp: Date.now(),
+                    createdAt: new Date().toISOString()
+                };
+                
+                console.log('[AnalysisCenter] 准备保存的数据:', resultData);
+                
+                // 尝试保存分析结果
+                let saved = false;
+                
+                // 优先使用核心同步系统
+                if (window.coreSyncSystem && typeof window.coreSyncSystem.addAnalysisRecord === 'function') {
+                    console.log('[AnalysisCenter] 使用核心同步系统保存记录');
+                    try {
+                        await window.coreSyncSystem.addAnalysisRecord(resultData);
+                        saved = true;
+                    } catch (coreError) {
+                        console.error('[AnalysisCenter] 核心同步系统保存失败:', coreError);
+                    }
+                }
+                
+                // 降级方案1：使用同步桥接器
+                if (!saved && window.syncBridge && typeof window.syncBridge.onAnalysisRecordAdded === 'function') {
+                    console.log('[AnalysisCenter] 使用同步桥接器保存记录');
+                    try {
+                        await window.syncBridge.onAnalysisRecordAdded(resultData);
+                        saved = true;
+                    } catch (bridgeError) {
+                        console.error('[AnalysisCenter] 同步桥接器保存失败:', bridgeError);
+                    }
+                }
+                
+                // 降级方案2：使用localDB
+                if (!saved && window.localDB && typeof window.localDB.addAnalysisRecord === 'function') {
+                    console.log('[AnalysisCenter] 使用localDB保存记录');
+                    try {
+                        await window.localDB.addAnalysisRecord(resultData);
+                        saved = true;
+                    } catch (dbError) {
+                        console.error('[AnalysisCenter] localDB保存失败:', dbError);
+                    }
+                }
+                
+                // 最终降级方案：直接使用localStorage
+                if (!saved) {
+                    console.log('[AnalysisCenter] 使用localStorage保存记录');
+                    try {
+                        let historyRecords = JSON.parse(localStorage.getItem('analysisHistory') || '[]');
+                        historyRecords.unshift(resultData);
+                        
+                        if (historyRecords.length > 100) {
+                            historyRecords = historyRecords.slice(0, 100);
+                        }
+                        
+                        localStorage.setItem('analysisHistory', JSON.stringify(historyRecords));
+                        saved = true;
+                        console.log('[AnalysisCenter] 成功保存到localStorage，历史记录总数:', historyRecords.length);
+                    } catch (storageError) {
+                        console.error('[AnalysisCenter] localStorage保存失败:', storageError);
+                    }
+                }
+                
+                if (saved) {
+                    // 显示保存成功提示
+                    alert('分析结果已成功保存！');
+                    console.log('[AnalysisCenter] 手动保存成功');
+                    
+                    // 触发分析历史更新事件
+                    try {
+                        const event = new CustomEvent('analysisHistoryUpdated', {
+                            detail: {
+                                message: '分析历史已更新',
+                                timestamp: Date.now(),
+                                newRecord: resultData,
+                                source: 'manual_save'
+                            }
+                        });
+                        window.dispatchEvent(event);
+                        console.log('[AnalysisCenter] 已触发分析历史更新事件');
+                    } catch (eventError) {
+                        console.error('[AnalysisCenter] 触发事件失败:', eventError);
+                    }
+                } else {
+                    // 所有保存方法都失败
+                    console.error('[AnalysisCenter] 所有保存方法都失败');
+                    alert('保存失败，请稍后重试');
+                }
+            } catch (error) {
+                console.error('[AnalysisCenter] 手动保存过程中发生异常:', error);
+                alert('保存失败，请稍后重试');
+            } finally {
+                // 恢复按钮状态
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
         document.getElementById('view-history-btn').addEventListener('click', function() {
+            // 直接跳转到用户中心页面
             window.location.href = 'user_center.html';
         });
+        
+
         
         // 初始化生理指标雷达图
         function initPhysiologicalChart() {
@@ -853,35 +1049,101 @@
             }
         });
         
-        // 加载用户资料
-        async function loadUserProfile() {
+        // 加载用户资料 - 增强版，优先使用核心同步系统
+        async function loadUserProfile(forceUpdate = false) {
             try {
-                // 首先检查是否有同步数据
-                const syncData = localStorage.getItem('userProfileData');
-                if (syncData) {
-                    const profile = JSON.parse(syncData);
-                    updateProfileDisplay(profile);
-                    console.log('从同步数据加载用户资料');
-                    return;
+                const syncSystemLogger = { 
+                    log: (...args) => console.log(`[AnalysisCenter] ${new Date().toLocaleTimeString()}`, ...args),
+                    error: (...args) => console.error(`[AnalysisCenter] ${new Date().toLocaleTimeString()}`, ...args)
+                };
+                
+                syncSystemLogger.log(`加载用户资料${forceUpdate ? '(强制)' : ''}...`);
+                
+                // 1. 优先使用核心同步系统
+                if (window.coreSyncSystem && typeof window.coreSyncSystem.getUserProfile === 'function') {
+                    try {
+                        const profile = await window.coreSyncSystem.getUserProfile();
+                        if (profile) {
+                            updateProfileDisplay(profile);
+                            syncSystemLogger.log('从核心同步系统加载资料成功');
+                            return profile;
+                        }
+                    } catch (coreError) {
+                        syncSystemLogger.error('从核心同步系统加载失败:', coreError);
+                        // 继续尝试其他方法
+                    }
                 }
                 
-                // 使用全局的window.localDB实例
-                if (!window.localDB) {
-                    console.warn('localDB未定义，无法加载用户资料');
-                    return;
+                // 2. 其次使用API获取用户资料
+                if (window.apiService && window.apiService.isLoggedIn()) {
+                    try {
+                        const profile = await window.apiService.getUserProfile();
+                        if (profile) {
+                            updateProfileDisplay(profile);
+                            // 保存到多个存储位置以支持兼容性
+                            try {
+                                localStorage.setItem('core_user_profile', JSON.stringify(profile));
+                                localStorage.setItem('userProfileData', JSON.stringify(profile));
+                                localStorage.setItem('currentUser', JSON.stringify(profile));
+                            } catch (storageError) {
+                                syncSystemLogger.error('保存到localStorage失败:', storageError);
+                            }
+                            syncSystemLogger.log('从API加载资料成功');
+                            return profile;
+                        }
+                    } catch (apiError) {
+                        syncSystemLogger.error('从API加载失败:', apiError);
+                        // 继续尝试其他方法
+                    }
                 }
                 
-                const profile = await window.localDB.getUserProfile();
-                
-                if (profile) {
-                    updateProfileDisplay(profile);
-                    
-                    // 保存到同步存储
-                    localStorage.setItem('userProfileData', JSON.stringify(profile));
+                // 3. 尝试localDB
+                if (window.localDB && typeof window.localDB.getUserProfile === 'function') {
+                    try {
+                        const profile = await window.localDB.getUserProfile();
+                        if (profile) {
+                            updateProfileDisplay(profile);
+                            // 保存到同步存储
+                            try {
+                                localStorage.setItem('core_user_profile', JSON.stringify(profile));
+                                localStorage.setItem('userProfileData', JSON.stringify(profile));
+                            } catch (storageError) {
+                                syncSystemLogger.error('保存到localStorage失败:', storageError);
+                            }
+                            syncSystemLogger.log('从localDB加载资料成功');
+                            return profile;
+                        }
+                    } catch (dbError) {
+                        syncSystemLogger.error('从localDB加载失败:', dbError);
+                    }
                 }
+                
+                // 4. 从localStorage获取 - 尝试多个可能的键
+                try {
+                    const possibleKeys = ['core_user_profile', 'userProfileData', 'currentUser'];
+                    for (const key of possibleKeys) {
+                        const syncData = localStorage.getItem(key);
+                        if (syncData) {
+                            try {
+                                const profile = JSON.parse(syncData);
+                                updateProfileDisplay(profile);
+                                syncSystemLogger.log(`从${key}加载资料成功`);
+                                return profile;
+                            } catch (parseError) {
+                                syncSystemLogger.error(`解析${key}数据失败:`, parseError);
+                                // 尝试下一个键
+                            }
+                        }
+                    }
+                } catch (storageError) {
+                    syncSystemLogger.error('访问localStorage失败:', storageError);
+                }
+                
+                syncSystemLogger.log('所有加载方法都失败');
             } catch (error) {
-                console.error('加载用户资料失败:', error);
+                console.error('加载用户资料异常:', error);
             }
+            return null;
         }
         
         // 更新资料显示
@@ -902,7 +1164,6 @@
                 if (desktopName) {
                     desktopName.textContent = defaultName;
                 }
-                console.log('已更新桌面端用户信息');
             }
             
             // 更新移动端导航栏
@@ -919,21 +1180,41 @@
                     if (mobileName) {
                         mobileName.textContent = defaultName;
                     }
-                    console.log('已更新移动端用户信息');
                 }
             }
         }
         
         // 页面加载完成后初始化
-        // 设置用户资料同步监听器（保留以确保兼容性）
+        // 设置用户资料同步监听器 - 增强版，支持核心同步系统
         function setupProfileSyncListener() {
-            console.log('设置用户资料同步监听器（兼容模式）');
+            const syncSystemLogger = { 
+                log: (...args) => console.log(`[AnalysisCenter] ${new Date().toLocaleTimeString()}`, ...args),
+                error: (...args) => console.error(`[AnalysisCenter] ${new Date().toLocaleTimeString()}`, ...args)
+            };
             
-            // 监听自定义事件
-            window.addEventListener('ultimateProfileUpdated', (e) => {
-                console.log('🔄 接收到终极同步系统的资料更新事件');
-                // 如有需要可以在这里添加额外处理
+            // 统一的资料更新处理函数
+            async function handleProfileUpdate() {
+                try {
+                    await loadUserProfile();
+                    syncSystemLogger.log('用户资料已更新');
+                } catch (error) {
+                    syncSystemLogger.error('处理资料更新失败:', error);
+                }
+            }
+            
+            // 监听核心同步系统事件
+            window.addEventListener('coreSyncInitialized', () => {
+                syncSystemLogger.log('核心同步系统已初始化');
             });
+            
+            // 监听核心同步系统资料更新事件
+            window.addEventListener('coreProfileUpdated', handleProfileUpdate);
+            
+            // 兼容旧系统事件
+            window.addEventListener('ultimateProfileUpdated', handleProfileUpdate);
+            window.addEventListener('unifiedProfileUpdated', handleProfileUpdate);
+            
+            syncSystemLogger.log('已订阅所有资料更新事件');
         }
 
         // 从localStorage获取登录用户信息
@@ -951,7 +1232,7 @@
                 }
                 return null;
             } catch (error) {
-                console.error('获取用户信息失败:', error);
+                // 静默处理获取失败
                 return null;
             }
         }
@@ -963,94 +1244,183 @@
                 
                 // 如果没有登录凭证，重定向到登录页面
                 if (!user || !user.username) {
-                    console.warn('未检测到登录状态，重定向到登录页面...');
                     window.location.href = 'login.html';
                     return false;
                 }
                 
-                console.log('已检测到登录状态，当前用户:', user.username);
                 return true;
             } catch (error) {
-                console.error('检查登录状态时发生错误:', error);
                 window.location.href = 'login.html';
                 return false;
             }
         }
         
         document.addEventListener('DOMContentLoaded', async function() {
-                console.log('🌐 分析中心页面初始化');
-                
                 // 检查登录状态
                 if (!checkLoginStatus()) {
                     // 如果未登录，不执行后续代码
                     return;
                 }
                 
-                // 确保用户资料同步系统正确初始化
-                if (window.userProfileSync && typeof window.userProfileSync.syncProfileData === 'function') {
-                    console.log('✅ 使用userProfileSync系统同步用户资料');
-                    await window.userProfileSync.syncProfileData();
-                } else if (window.ultimateSyncSystem && typeof window.ultimateSyncSystem.syncUserProfile === 'function') {
-                    console.log('✅ 使用ultimateSyncSystem同步用户资料');
-                    await window.ultimateSyncSystem.syncUserProfile();
-                } else {
-                    // 备用方案：使用原有加载逻辑
-                    console.log('⚠️ 使用备用同步逻辑');
-                    await loadUserProfile();
+                const syncSystemLogger = { 
+                    log: (...args) => console.log(`[AnalysisCenter] ${new Date().toLocaleTimeString()}`, ...args),
+                    error: (...args) => console.error(`[AnalysisCenter] ${new Date().toLocaleTimeString()}`, ...args)
+                };
+                
+                // 使用一个全局变量防止同步过程重复执行
+                window._syncInProgress = false;
+                
+                // 优化的同步函数，优先使用核心同步系统
+                async function performSync() {
+                    // 防止重复执行
+                    if (window._syncInProgress) {
+                        syncSystemLogger.log('同步过程正在进行中，跳过此次执行');
+                        return;
+                    }
+                    
+                    window._syncInProgress = true;
+                    try {
+                        syncSystemLogger.log('开始同步数据...');
+                        
+                        // 优先使用核心同步系统的统一同步方法
+                        if (window.coreSyncSystem && typeof window.coreSyncSystem.syncAllData === 'function') {
+                            try {
+                                await window.coreSyncSystem.syncAllData();
+                                syncSystemLogger.log('核心同步系统同步完成');
+                                return;
+                            } catch (coreSyncError) {
+                                syncSystemLogger.error('核心同步系统同步失败，尝试备选方案:', coreSyncError);
+                                // 继续尝试其他方案
+                            }
+                        }
+                        
+                        // 如果核心同步系统不可用或失败，尝试单独同步
+                        try {
+                            await loadUserProfile();
+                        } catch (profileError) {
+                            syncSystemLogger.error('同步用户资料失败:', profileError);
+                        }
+                        
+                        syncSystemLogger.log('同步完成');
+                    } finally {
+                        // 无论成功失败，都要重置同步状态标志
+                        window._syncInProgress = false;
+                    }
+                }
+                
+                // 激活用户资料同步监听器
+                setupProfileSyncListener();
+                
+                // 初始化时尝试同步
+                try {
+                    // 优先使用核心同步系统
+                    if (window.coreSyncSystem && typeof window.coreSyncSystem.syncAllData === 'function') {
+                        syncSystemLogger.log('使用核心同步系统同步数据');
+                        await window.coreSyncSystem.syncAllData();
+                    } else if (window.userProfileSync && typeof window.userProfileSync.syncProfileData === 'function') {
+                        syncSystemLogger.log('使用userProfileSync同步用户资料');
+                        await window.userProfileSync.syncProfileData();
+                    } else if (window.ultimateSyncSystem && typeof window.ultimateSyncSystem.syncUserProfile === 'function') {
+                        syncSystemLogger.log('使用ultimateSyncSystem同步用户资料');
+                        await window.ultimateSyncSystem.syncUserProfile();
+                    } else {
+                        syncSystemLogger.log('使用备用同步逻辑');
+                        await loadUserProfile();
+                    }
+                } catch (syncError) {
+                    syncSystemLogger.error('初始化同步失败，将使用备用加载:', syncError);
+                    try {
+                        await loadUserProfile();
+                    } catch (loadError) {
+                        syncSystemLogger.error('备用加载也失败:', loadError);
+                    }
                 }
                 
                 // 设置定期同步以确保数据最新，所有情况下都适用
-                setInterval(async () => {
-                    try {
-                        console.log('⏰ 执行定期资料同步...');
-                        if (window.userProfileSync && typeof window.userProfileSync.syncProfileData === 'function') {
-                            await window.userProfileSync.syncProfileData();
-                        } else if (window.ultimateSyncSystem && typeof window.ultimateSyncSystem.syncUserProfile === 'function') {
-                            await window.ultimateSyncSystem.syncUserProfile();
-                        } else {
-                            await loadUserProfile();
-                        }
-                    } catch (error) {
-                        console.error('定期同步失败:', error);
-                    }
-                }, 30000); // 每30秒同步一次
+                const syncIntervalId = setInterval(() => {
+                    // 异步执行，不阻塞定时器
+                    performSync().catch(error => {
+                        syncSystemLogger.error('定时器同步失败:', error);
+                    });
+                }, 60000); // 延长到60秒，减少同步频率
                 
-                // 监听localStorage变化，实现跨页面同步
+                // 添加页面卸载时清理定时器
+                window.addEventListener('beforeunload', () => {
+                    clearInterval(syncIntervalId);
+                    syncSystemLogger.log('已清理同步定时器');
+                });
+                
+                // 监听localStorage变化，实现跨页面同步 - 增强版
                 window.addEventListener('storage', (e) => {
-                    if (e.key === 'analysisHistory' || e.key === 'userCredentials' || e.key === 'userProfileData') {
-                        console.log(`📤 检测到${e.key}变化，触发同步...`);
+                    // 包含核心同步系统的存储键
+                    const relevantKeys = [
+                        'core_user_profile', 'analysisHistory', 
+                        'userCredentials', 'userProfileData', 
+                        'currentUser', 'core_sync_timestamp'
+                    ];
+                    
+                    if (relevantKeys.includes(e.key)) {
+                        syncSystemLogger.log(`检测到localStorage变化: ${e.key}`);
+                        
                         // 延迟执行以确保数据写入完成
                         setTimeout(() => {
                             try {
-                                // 如果是历史记录变化
-                                if (e.key === 'analysisHistory') {
-                                    // 触发自定义事件通知分析中心更新
-                                    const event = new CustomEvent('analysisHistoryUpdated', {
-                                        detail: { source: 'localStorage' }
-                                    });
-                                    window.dispatchEvent(event);
-                                } else if (e.key === 'userCredentials' || e.key === 'userProfileData') {
-                                    // 如果是用户资料变化
-                                    loadUserProfile();
+                                // 防止重复执行
+                                if (window._syncInProgress) {
+                                    syncSystemLogger.log('同步进行中，跳过storage事件同步');
+                                    return;
+                                }
+                                
+                                // 对于核心同步系统的变更，直接使用performSync
+                                if (e.key === 'core_user_profile' || e.key === 'core_sync_timestamp') {
+                                    performSync();
+                                } else if (e.key === 'analysisHistory') {
+                                    // 历史记录变化
+                                    try {
+                                        // 触发自定义事件通知分析中心更新
+                                        const event = new CustomEvent('analysisHistoryUpdated', {
+                                            detail: { source: 'localStorage' }
+                                        });
+                                        window.dispatchEvent(event);
+                                        // 同时触发核心同步系统的事件
+                                        const coreEvent = new CustomEvent('coreAnalysisHistoryUpdated', {
+                                            detail: { source: 'localStorage' }
+                                        });
+                                        window.dispatchEvent(coreEvent);
+                                    } catch (eventError) {
+                                        syncSystemLogger.error('触发历史更新事件失败:', eventError);
+                                    }
+                                } else {
+                                    // 用户资料相关变化
+                                    loadUserProfile().catch(err => 
+                                        syncSystemLogger.error('storage事件同步用户资料失败:', err)
+                                    );
                                 }
                             } catch (error) {
-                                console.error('跨页面同步失败:', error);
+                                syncSystemLogger.error('处理storage事件失败:', error);
                             }
-                        }, 100);
+                        }, 200); // 稍微延长延迟，确保数据完全写入
                     }
                 });
                 
-                // 监听页面可见性变化，当页面重新可见时同步数据
-                document.addEventListener('visibilitychange', async () => {
+                // 监听页面可见性变化，当页面重新可见时同步数据 - 优化版
+                document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'visible') {
-                        console.log('👁️ 页面重新可见，执行同步...');
-                        try {
-                            await loadUserProfile();
-                        } catch (error) {
-                            console.error('页面可见时同步失败:', error);
-                        }
+                        syncSystemLogger.log('页面重新可见，准备同步数据');
+                        
+                        // 使用优化的同步函数，避免重复代码
+                        performSync().catch(error => {
+                            syncSystemLogger.error('页面可见性同步失败:', error);
+                        });
                     }
                 });
+                
+                // 导出关键函数供调试使用
+                window._analysisSyncDebug = {
+                    performSync,
+                    loadUserProfile,
+                    logger: syncSystemLogger
+                };
             });
     </script>
 </body>
